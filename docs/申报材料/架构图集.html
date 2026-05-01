@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>企业协同人事平台 — 架构与模块图</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #f8f9fa;
+    color: #333;
+  }
+  h1 { text-align: center; font-size: 28px; margin-bottom: 8px; }
+  .sub { text-align: center; color: #777; margin-bottom: 40px; }
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 30px;
+    margin-bottom: 32px;
+  }
+  .card h2 {
+    margin-top: 0;
+    font-size: 20px;
+    border-left: 4px solid #4A90D9;
+    padding-left: 14px;
+    color: #222;
+  }
+  .card p.desc { color: #666; font-size: 14px; margin-bottom: 20px; }
+  .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>🏢 企业协同人事平台</h1>
+<p class="sub">Workforce Hub — 开放性实验项目 · 架构设计图集</p>
+
+<!-- ============ 图1: 系统总体架构拓扑 ============ -->
+<div class="card">
+<h2>图1 · 系统总体架构拓扑</h2>
+<p class="desc">展示前端层、网关层、应用层、数据层、外部依赖的完整拓扑关系</p>
+<div class="mermaid">
+graph TB
+    subgraph 前端层
+        A1["👤 员工Web端<br/>Vue3 + Element Plus"]
+        A2["⚙️ 管理后台<br/>Vue3"]
+    end
+
+    subgraph 网关层
+        B["🔀 Nginx<br/>反向代理 / 静态资源"]
+    end
+
+    subgraph 应用层
+        C["☕ Spring Boot App<br/>模块化单体"]
+        C1["HTTP API"]
+        C2["WebSocket"]
+        C3["定时任务"]
+        C4["Agent Worker"]
+    end
+
+    subgraph 数据层
+        D1[("🗄️ MySQL<br/>主业务库")]
+        D2[("🔍 PostgreSQL<br/>pgvector 向量库")]
+        D3[("⚡ Redis<br/>缓存 / 会话")]
+        D4[("📁 MinIO<br/>文件存储")]
+    end
+
+    subgraph 外部依赖
+        E1["🤖 模型服务<br/>LLM API"]
+        E2["📧 SMTP<br/>邮件服务"]
+        E3["🔌 外部连接器"]
+    end
+
+    A1 --> B
+    A2 --> B
+    B --> C
+    C --> C1
+    C --> C2
+    C --> C3
+    C --> C4
+    C1 --> D1
+    C1 --> D2
+    C1 --> D3
+    C1 --> D4
+    C1 --> E1
+    C1 --> E2
+    C1 --> E3
+
+    style A1 fill:#E8F5E9,stroke:#4CAF50
+    style A2 fill:#E3F2FD,stroke:#2196F3
+    style C fill:#FFF3E0,stroke:#FF9800
+    style D1 fill:#F3E5F5,stroke:#9C27B0
+    style D2 fill:#E8EAF6,stroke:#3F51B5
+</div>
+</div>
+
+<!-- ============ 图2: 后端模块划分 ============ -->
+<div class="card">
+<h2>图2 · 后端模块划分与依赖关系</h2>
+<p class="desc">14个业务模块的职责划分、分层关系与核心依赖原则</p>
+<div class="mermaid">
+graph TB
+    subgraph 基础层
+        COM["module-common<br/>公共响应/异常/工具"]
+        SPI["module-spi<br/>跨模块服务契约"]
+    end
+
+    subgraph 认证与组织
+        AUTH["module-auth<br/>登录/验证码/鉴权"]
+        ORG["module-org<br/>组织/岗位/员工"]
+        ADMIN["module-admin<br/>后台RBAC/菜单"]
+    end
+
+    subgraph 核心业务
+        WF["module-workflow<br/>审批/模板/抄送"]
+        ATT["module-attendance<br/>考勤/排班/打卡"]
+        LV["module-leave<br/>假期规则/账户"]
+    end
+
+    subgraph 协同与智能
+        IM["module-im<br/>会话/群组/WebSocket"]
+        AGT["module-agent<br/>Agent定义/任务/审计"]
+        KB["module-kb<br/>知识库/RAG检索"]
+        DOC["module-doc<br/>文档空间/版本"]
+        CONN["module-connector<br/>外部连接器/凭证"]
+        NOTIFY["module-notify<br/>邮件/提醒/待办"]
+    end
+
+    COM --> AUTH
+    COM --> ORG
+    COM --> WF
+    COM --> IM
+    COM --> AGT
+    SPI --> WF
+    SPI --> AGT
+    SPI --> IM
+    AUTH --> ORG
+    WF -.->|SPI接口| AGT
+    IM -.->|SPI接口| AGT
+
+    style COM fill:#ECEFF1,stroke:#607D8B
+    style SPI fill:#ECEFF1,stroke:#607D8B
+    style AGT fill:#FFF8E1,stroke:#FFC107,stroke-width:3px
+    style KB fill:#E8F5E9,stroke:#4CAF50
+</div>
+</div>
+
+<!-- ============ 图3: Agent平台内部架构 ============ -->
+<div class="card">
+<h2>图3 · Agent平台内部架构（核心创新）</h2>
+<p class="desc">Agent的生命周期、能力组件、触发方式与执行权限的三线裁剪模型</p>
+<div class="mermaid">
+graph LR
+    subgraph Agent生命周期
+        L1["📝 草稿"] --> L2["🧪 测试"]
+        L2 --> L3["🚀 发布"]
+        L3 --> L4["⏸️ 停用"]
+        L3 --> L5["↩️ 回滚"]
+    end
+
+    subgraph Agent能力组件
+        C1["🧠 模型选择<br/>+ 路由配置"]
+        C2["📋 Prompt模板<br/>版本管理"]
+        C3["🔧 工具绑定<br/>白名单授权"]
+        C4["📚 知识库<br/>RAG绑定"]
+        C5["🔄 工作流<br/>编排定义"]
+    end
+
+    subgraph 触发方式
+        T1["💬 会话@触发"]
+        T2["📋 流程节点触发"]
+        T3["⏰ 定时任务触发"]
+        T4["📡 事件触发"]
+    end
+
+    subgraph 三线权限裁剪
+        P1["Agent自身权限"]
+        P2["当前用户授权"]
+        P3["业务/知识范围"]
+        P4["= 最终执行权限"]
+        P1 --> P4
+        P2 --> P4
+        P3 --> P4
+    end
+
+    L3 --> C1
+    L3 --> C2
+    L3 --> C3
+    L3 --> C4
+    L3 --> C5
+    T1 --> L3
+    T2 --> L3
+    T3 --> L3
+    T4 --> L3
+    L3 --> P4
+
+    style L3 fill:#FFF8E1,stroke:#FFC107,stroke-width:3px
+    style P4 fill:#FFEBEE,stroke:#F44336,stroke-width:2px
+</div>
+</div>
+
+<!-- ============ 图4: 核心业务流程图 ============ -->
+<div class="card">
+<h2>图4 · 核心业务流程（打卡→考勤→异常→补卡闭环）</h2>
+<p class="desc">以考勤场景为例，展示从打卡到结果计算的完整业务回路</p>
+<div class="mermaid">
+flowchart TD
+    A["👤 员工打卡"] --> B{"考勤规则校验<br/>时间窗口 / 定位 / IP"}
+    B -->|合规| C["✅ 正常打卡记录"]
+    B -->|异常| D["⚠️ 生成异常记录"]
+    
+    C --> E["📊 考勤结果计算<br/>迟到/早退/旷工判定"]
+    D --> E
+    
+    E --> F{"员工查看考勤结果"}
+    F -->|有异议| G["📝 发起补卡申请"]
+    F -->|无异议| H["✔️ 确认归档"]
+    
+    G --> I["📋 Agent预审<br/>硬规则校验"]
+    I -->|违规| J["❌ 自动驳回"]
+    I -->|合规/不确定| K["👔 直属上级审批"]
+    K --> L{"审批结果"}
+    L -->|通过| M["🔄 考勤结果修正"]
+    L -->|驳回| N["📩 驳回通知"]
+    M --> H
+    
+    style A fill:#E8F5E9,stroke:#4CAF50
+    style I fill:#FFF8E1,stroke:#FFC107,stroke-width:2px
+    style J fill:#FFEBEE,stroke:#F44336
+    style M fill:#E3F2FD,stroke:#2196F3
+</div>
+</div>
+
+<!-- ============ 图5: 核心数据域关系 ============ -->
+<div class="card">
+<h2>图5 · 核心数据域关系总览</h2>
+<p class="desc">12个数据域的核心实体及跨域引用关系</p>
+<div class="mermaid">
+erDiagram
+    org_department ||--o{ org_user : "主部门归属"
+    org_user ||--|| auth_user_account : "登录账号"
+    org_user ||--o{ wf_application : "发起申请"
+    org_user ||--o{ att_clock_record : "打卡"
+    org_user ||--o{ lv_leave_account : "假期账户"
+    org_user ||--o{ im_message : "发送消息"
+    org_user ||--o{ im_group_member : "群成员"
+    
+    org_department ||--o{ org_department_leader : "领导成员"
+    org_department ||--o{ im_group : "组织群"
+    
+    wf_application ||--o{ wf_approval_task : "审批任务"
+    wf_application ||--o{ agt_audit_log : "Agent预审记录"
+    
+    agt_agent ||--o{ agt_agent_version : "版本记录"
+    agt_agent ||--o{ agt_tool_binding : "工具绑定"
+    agt_agent ||--o{ kb_knowledge_binding : "知识库绑定"
+    agt_agent ||--o{ agt_execution_log : "执行日志"
+    
+    kb_knowledge ||--o{ kb_document : "知识文档"
+    kb_document ||--o{ kb_chunk : "知识切片"
+    kb_chunk ||--|| pg_embedding : "向量存储"
+    
+    att_schedule_group ||--o{ att_schedule_record : "排班记录"
+    att_schedule_group ||--o{ org_user : "考勤归属"
+</div>
+</div>
+
+</body>
+</html>
