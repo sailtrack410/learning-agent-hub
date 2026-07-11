@@ -22,6 +22,6 @@ public class WorkflowFlowableTestConfiguration {
 
     private static String testDatabaseName() {
         String value = System.getenv("TEST_DB_NAME");
-        return value == null || value.isBlank() ? "workforce_hub_test" : value;
+        return value == null || value.isBlank() ? "learning_agent_hub_test" : value;
     }
 }

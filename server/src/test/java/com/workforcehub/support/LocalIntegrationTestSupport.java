@@ -66,7 +66,7 @@ public abstract class LocalIntegrationTestSupport {
             MYSQL_URL_TEMPLATE,
             envOrFallback("TEST_DB_HOST", "DB_HOST", "localhost"),
             envOrFallback("TEST_DB_PORT", "DB_PORT", "3306"),
-            env("TEST_DB_NAME", "workforce_hub_test")
+            env("TEST_DB_NAME", "learning_agent_hub_test")
         ));
         registry.add("spring.datasource.username", () -> envOrFallback("TEST_DB_USER", "DB_USER", "root"));
         registry.add("spring.datasource.password", () -> envOrFallback("TEST_DB_PASSWORD", "DB_PASSWORD", "wjsalty0410"));
@@ -255,11 +255,11 @@ public abstract class LocalIntegrationTestSupport {
     }
 
     private static String testSessionRedisNamespace() {
-        return "workforce:test:session:" + env("TEST_DB_NAME", "workforce_hub_test");
+        return "workforce:test:session:" + env("TEST_DB_NAME", "learning_agent_hub_test");
     }
 
     private static String testAuthRedisKeyPrefix() {
-        return "workforce:test:auth:" + env("TEST_DB_NAME", "workforce_hub_test") + ":";
+        return "workforce:test:auth:" + env("TEST_DB_NAME", "learning_agent_hub_test") + ":";
     }
 
     private void deleteKeys(String pattern) {
