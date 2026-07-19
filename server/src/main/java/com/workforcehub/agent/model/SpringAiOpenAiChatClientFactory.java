@@ -33,11 +33,14 @@ public class SpringAiOpenAiChatClientFactory {
             restClientBuilder,
             RetryUtils.DEFAULT_RESPONSE_ERROR_HANDLER
         );
-        OpenAiChatOptions options = OpenAiChatOptions.builder()
+        OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder()
             .withModel(config.model())
             .withMaxTokens(config.maxTokens())
-            .withTemperature(config.temperature().floatValue())
-            .build();
+            .withTemperature(config.temperature().floatValue());
+        if (config.jsonObjectResponse()) {
+            optionsBuilder.withResponseFormat(new OpenAiApi.ChatCompletionRequest.ResponseFormat("json_object"));
+        }
+        OpenAiChatOptions options = optionsBuilder.build();
         return new OpenAiChatClient(openAiApi, options);
     }
 
@@ -47,7 +50,9 @@ public class SpringAiOpenAiChatClientFactory {
         String model,
         Integer maxTokens,
         Double temperature,
-        Duration timeout
+        Duration timeout,
+        boolean jsonObjectResponse,
+        boolean requireJsonObjectResponse
     ) {
     }
 }

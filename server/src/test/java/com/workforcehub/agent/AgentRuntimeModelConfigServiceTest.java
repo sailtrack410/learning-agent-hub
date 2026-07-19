@@ -30,6 +30,7 @@ class AgentRuntimeModelConfigServiceTest {
         assertEquals("admin-model", config.model());
         assertEquals("https://admin.example/v1", config.baseUrl());
         assertEquals("admin-key", config.apiKey());
+        assertEquals(true, config.structuredOutput());
     }
 
     @Test
@@ -42,6 +43,7 @@ class AgentRuntimeModelConfigServiceTest {
 
         assertEquals("ENVIRONMENT", config.source());
         assertEquals("env-model", config.model());
+        assertEquals(false, config.structuredOutput());
     }
 
     @Test
