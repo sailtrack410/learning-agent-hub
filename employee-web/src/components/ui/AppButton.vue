@@ -37,15 +37,15 @@ const props = withDefaults(defineProps<{
   align-items: center;
   justify-content: center;
   gap: var(--space-8);
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: var(--space-8) var(--space-16);
   border: 1px solid transparent;
-  border-radius: var(--radius-8);
+  border-radius: var(--radius-10);
   font-family: var(--font-family-body);
   font-size: var(--text-body-sm);
   font-weight: 600;
   line-height: 1;
-  transition: all 200ms ease;
+  transition: color var(--transition-base), background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .ui-button:active:not(:disabled) {
@@ -70,31 +70,35 @@ const props = withDefaults(defineProps<{
 }
 
 .ui-button.size-sm {
-  min-height: 2rem;
+  min-height: 2.25rem;
   padding-inline: var(--space-12);
   font-size: var(--text-caption-md);
 }
 
 .ui-button.size-lg {
-  min-height: 2.875rem;
+  min-height: 3rem;
   padding-inline: var(--space-20);
   font-size: var(--text-body-md);
 }
 
 .ui-button.variant-primary {
-  background: #1677ff;
+  border-color: var(--primary-600);
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
   color: var(--text-inverse);
+  box-shadow: var(--shadow-button);
 }
 
 .ui-button.variant-primary:hover:not(:disabled),
 .ui-button.variant-primary:focus-visible {
-  background: #0f67df;
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  box-shadow: var(--shadow-md);
 }
 
 .ui-button.variant-secondary {
   background: var(--surface-panel);
   border-color: var(--border-default);
   color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .ui-button.variant-secondary:hover:not(:disabled),
@@ -133,5 +137,11 @@ const props = withDefaults(defineProps<{
 
 .ui-button.variant-link:hover:not(:disabled) {
   color: var(--primary-600);
+}
+
+@media (max-width: 640px) {
+  .ui-button.size-sm {
+    min-height: 2.75rem;
+  }
 }
 </style>

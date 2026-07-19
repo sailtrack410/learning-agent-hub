@@ -137,7 +137,7 @@ export function auditTargetLabel(value?: string | null) {
     STORAGE_QUOTA_POLICY: '存储配额',
     IM_EVENT_OUTBOX: '消息投递',
     IM_EVENT_OUTBOX_DISPATCH: '消息投递',
-    USER: '员工',
+    USER: '用户',
     ADMIN: '管理员',
     ADMIN_USER: '管理员',
     ROLE: '角色',
@@ -149,7 +149,7 @@ export function auditTargetLabel(value?: string | null) {
 
 export function auditOperatorLabel(type?: string | null, id?: EntityId | null) {
   const labels: Record<string, string> = {
-    USER: '员工',
+    USER: '用户',
     ADMIN: '管理员',
     ADMIN_USER: '管理员',
     SYSTEM: '系统',
@@ -217,7 +217,7 @@ function humanizeAuditCode(value: string) {
     TRASHED: '已移入回收站',
     UPDATED: '已修改',
     UPLOAD: '上传',
-    USER: '员工',
+    USER: '用户',
     WAITING: '等待',
     WORKFLOW: '审批',
   };
@@ -380,7 +380,7 @@ export function leaveBalanceModeLabel(value?: string | null) {
 
 export function agentContextLabel(value?: string | null) {
   const labels: Record<string, string> = {
-    USER_QUERY: '员工咨询',
+    USER_QUERY: '学习咨询',
     WF_REQUEST: '审批申请',
     IM_GROUP: '群聊消息',
     IM_CONVERSATION: '消息会话',
@@ -392,7 +392,7 @@ export function agentContextLabel(value?: string | null) {
 
 export function actorTypeLabel(value?: string | null) {
   const labels: Record<string, string> = {
-    USER: '员工',
+    USER: '用户',
     ADMIN: '管理员',
     ADMIN_USER: '管理员',
     SYSTEM: '系统',
@@ -504,6 +504,7 @@ export function permissionModuleLabel(value?: string | null) {
     FILE: '文件',
     RAGFLOW: '知识库',
     NOTIFICATION: '通知',
+    SYSTEM: '系统治理',
   };
   if (!value) return '-';
   return labels[value] ?? '其他模块';
@@ -525,9 +526,9 @@ export function permissionActionLabel(value?: string | null) {
 export function roleCodeLabel(value?: string | null) {
   const labels: Record<string, string> = {
     ADMIN: '系统管理员',
-    HR_MANAGER: '人事管理员',
+    HR_MANAGER: '教育运营管理员',
     DEPT_MANAGER: '部门主管',
-    EMPLOYEE: '普通员工',
+    EMPLOYEE: '普通运营成员',
     SUPER_ADMIN: '超级管理员',
   };
   if (!value) return '-';

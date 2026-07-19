@@ -27,19 +27,20 @@ const props = defineProps<{
   justify-items: center;
   gap: var(--space-12);
   padding: var(--space-32) var(--space-20);
-  border: 0;
-  border-radius: var(--radius-8);
-  background: var(--surface-panel);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-16);
+  background: linear-gradient(145deg, var(--surface-panel), color-mix(in srgb, var(--surface-accent) 54%, var(--surface-panel)));
   text-align: center;
+  box-shadow: var(--shadow-sm);
 }
 
 .empty-mark {
   position: relative;
   display: grid;
-  width: 4rem;
-  height: 3.25rem;
+  width: 4.5rem;
+  height: 3.75rem;
   place-items: center;
-  border-radius: var(--radius-16);
+  border-radius: var(--radius-20);
   background: var(--primary-50);
   box-shadow: inset 0 0 0 1px var(--primary-100);
 }
@@ -106,6 +107,7 @@ const props = defineProps<{
 .ui-empty-state h3 {
   margin: 0;
   font-size: var(--text-subtitle-sm);
+  font-family: var(--font-family-display);
 }
 
 .ui-empty-state p {

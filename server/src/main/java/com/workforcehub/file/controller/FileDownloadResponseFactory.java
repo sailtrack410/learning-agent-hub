@@ -28,6 +28,17 @@ public class FileDownloadResponseFactory {
             .body(result.resource());
     }
 
+    public ResponseEntity<Resource> inline(DownloadFileResult result) {
+        return ResponseEntity.ok()
+            .contentType(resolveMediaType(result.mimeType()))
+            .contentLength(result.fileSize())
+            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                .filename(result.fileName(), StandardCharsets.UTF_8)
+                .build()
+                .toString())
+            .body(result.resource());
+    }
+
     private MediaType resolveMediaType(String mimeType) {
         if (mimeType == null || mimeType.isBlank()) {
             return MediaType.APPLICATION_OCTET_STREAM;

@@ -5,6 +5,7 @@ import com.workforcehub.common.util.IdGenerator;
 import com.workforcehub.common.exception.BizException;
 import com.workforcehub.common.util.CurrentUserHolder;
 import com.workforcehub.common.util.TextValues;
+import com.workforcehub.course.service.CourseResourceAccessService;
 import com.workforcehub.file.dto.CreateDownloadTicketRequest;
 import com.workforcehub.file.dto.DownloadFileResult;
 import com.workforcehub.file.dto.DownloadTicketResponse;
@@ -34,17 +35,32 @@ public class FileDownloadService {
     private final DownloadTicketExecutionService downloadTicketExecutionService;
     private final AttachmentRefRepository attachmentRefRepository;
     private final AuditLogWriter auditLogWriter;
+    private final CourseResourceAccessService courseResourceAccessService;
 
     public FileDownloadService(JdbcTemplate jdbcTemplate,
                                StorageProviderRegistry storageProviderRegistry,
                                DownloadTicketExecutionService downloadTicketExecutionService,
                                AttachmentRefRepository attachmentRefRepository,
-                               AuditLogWriter auditLogWriter) {
+                               AuditLogWriter auditLogWriter,
+                               CourseResourceAccessService courseResourceAccessService) {
         this.jdbcTemplate = jdbcTemplate;
         this.storageProviderRegistry = storageProviderRegistry;
         this.downloadTicketExecutionService = downloadTicketExecutionService;
         this.attachmentRefRepository = attachmentRefRepository;
         this.auditLogWriter = auditLogWriter;
+        this.courseResourceAccessService = courseResourceAccessService;
+    }
+
+    public DownloadFileResult readCourseResource(Long attachmentRefId) {
+        Long userId = CurrentUserHolder.requireUserId();
+        courseResourceAccessService.requireReadableResource(userId, attachmentRefId);
+        DownloadAttachmentRow attachment = attachmentRefRepository.getDownloadAttachmentOrThrow(attachmentRefId);
+        if (attachment.deletedAt() != null || attachment.attachmentDeleted() != 0 || attachment.fileDeleted() != 0) {
+            throw new BizException(409, "课程资源已删除");
+        }
+        StorageObjectResource resource = storageProviderRegistry.require(attachment.storageProvider())
+            .loadObject(attachment.bucketName(), attachment.objectKey());
+        return new DownloadFileResult(resource.resource(), attachment.displayName(), attachment.mimeType(), resource.size());
     }
 
     @Transactional(rollbackFor = Exception.class)

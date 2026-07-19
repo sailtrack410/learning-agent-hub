@@ -100,7 +100,11 @@ public class ImRepository {
             SELECT c.id AS conversation_id,
                    c.conversation_type,
                    c.conversation_key,
-                   c.title,
+                   CASE
+                       WHEN c.conversation_type = 'PRIVATE'
+                       THEN COALESCE(NULLIF(TRIM(private_user.real_name), ''), c.title)
+                       ELSE c.title
+                   END AS title,
                    COALESCE(
                        CASE
                            WHEN c.conversation_type = 'PRIVATE'

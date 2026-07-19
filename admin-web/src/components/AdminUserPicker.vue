@@ -14,7 +14,7 @@ const props = withDefaults(
     label?: string;
     disabled?: boolean;
   }>(),
-  { modelValue: null, label: '员工', disabled: false },
+  { modelValue: null, label: '用户', disabled: false },
 );
 
 const emit = defineEmits<{
@@ -31,14 +31,14 @@ const selectedUser = ref<OrgUserSummaryResponse | null>(null);
 
 const columns: TableColumn[] = [
   { key: 'realName', label: '姓名' },
-  { key: 'primaryDeptName', label: '部门' },
-  { key: 'positionName', label: '岗位' },
+  { key: 'primaryDeptName', label: '学院 / 班级' },
+  { key: 'positionName', label: '教育身份' },
 ];
 
 const displayValue = computed(() => {
   if (!props.modelValue) return '请选择';
   if (selectedUser.value) return userLabel(selectedUser.value);
-  return '已选择员工';
+  return '已选择用户';
 });
 
 onMounted(loadUsers);
@@ -87,7 +87,7 @@ function clearUser() {
         <X :size="16" />
       </button>
     </div>
-    <AdminDialog v-model:visible="opened" title="选择员工" labelled-by="user-picker-title" width="min(820px, 92vw)">
+    <AdminDialog v-model:visible="opened" title="选择用户" labelled-by="user-picker-title" width="min(820px, 92vw)">
       <form class="picker-search" @submit.prevent="loadUsers">
         <input v-model="keyword" placeholder="姓名" />
         <button class="secondary-button" type="submit" :disabled="loading">

@@ -408,6 +408,8 @@ class RagflowAdminServiceVectorSettingsTest {
             "PENDING",
             6001L,
             "PENDING",
+            0,
+            "QUEUED",
             "PENDING",
             0,
             null,

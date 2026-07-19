@@ -11,6 +11,7 @@ import com.workforcehub.auth.security.WfhUserDetails;
 import com.workforcehub.common.enums.UserType;
 import com.workforcehub.common.exception.BizException;
 import com.workforcehub.common.util.CurrentUserHolder;
+import com.workforcehub.course.repository.EducationRoleRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,17 +31,20 @@ public class AccountService {
     private final OrgUserMapper orgUserMapper;
     private final EmailCodeService emailCodeService;
     private final PasswordEncoder passwordEncoder;
+    private final EducationRoleRepository educationRoleRepository;
 
     public AccountService(AuthUserAccountMapper accountMapper,
                           AdminPermissionService adminPermissionService,
                           OrgUserMapper orgUserMapper,
                           EmailCodeService emailCodeService,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          EducationRoleRepository educationRoleRepository) {
         this.accountMapper = accountMapper;
         this.adminPermissionService = adminPermissionService;
         this.orgUserMapper = orgUserMapper;
         this.emailCodeService = emailCodeService;
         this.passwordEncoder = passwordEncoder;
+        this.educationRoleRepository = educationRoleRepository;
     }
 
     /**
@@ -64,6 +68,7 @@ public class AccountService {
             response.setPermissionCodes(permissionProfile.permissionCodes());
         }
         if (user.getUserType() == UserType.USER) {
+            response.setEducationRole(educationRoleRepository.findRoleByUserId(user.getUserId()));
             AuthUserAccount account = accountMapper.selectByUserId(user.getUserId());
             if (account != null) {
                 response.setEmail(account.getEmail());

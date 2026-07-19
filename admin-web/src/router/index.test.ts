@@ -8,20 +8,23 @@ describe('admin router', () => {
     expect(findRoute(routes, '/dashboard')?.name).toBe('admin-dashboard');
     expect(findRoute(routes, '/agent-tasks')?.name).toBe('admin-agent-tasks');
     expect(findRoute(routes, '/agent-config')?.name).toBe('admin-agent-config');
-    expect(findRoute(routes, '/workflow')?.name).toBe('admin-workflow');
-    expect(findRoute(routes, '/leave')?.name).toBe('admin-leave');
-    expect(findRoute(routes, '/leave-types')?.name).toBe('admin-leave-types');
-    expect(findRoute(routes, '/departments')?.name).toBe('admin-departments');
-    expect(findRoute(routes, '/positions')?.name).toBe('admin-positions');
     expect(findRoute(routes, '/users')?.name).toBe('admin-users');
     expect(findRoute(routes, '/files')?.name).toBe('admin-files');
+    expect(findRoute(routes, '/message-delivery')?.name).toBe('admin-message-delivery');
+    expect(findRoute(routes, '/permissions')?.name).toBe('admin-permissions');
+    expect(findRoute(routes, '/audit-logs')?.name).toBe('admin-audit-logs');
     expect(findRoute(routes, '/ragflow')?.name).toBe('admin-ragflow');
     expect(findRoute(routes, '/ai-models')?.name).toBe('admin-ai-models');
+    expect(findRoute(routes, '/content-safety')?.name).toBe('admin-content-safety');
     expect(findRoute(routes, '/system')?.name).toBe('admin-system');
     expect(findRoute(routes, '/settings')?.name).toBe('admin-settings');
     expect(findRoute(routes, '/roles')?.name).toBe('admin-roles');
-    expect(findRoute(routes, '/attendance')?.name).toBe('admin-attendance');
     expect(findRoute(routes, '/agent-config')?.name).toBe('admin-agent-config');
+  });
+
+  it.each(['/workflow', '/leave', '/leave-types', '/attendance', '/departments', '/positions'])('removes the workforce route %s', async (path) => {
+    const routes = await loadAdminRoutes();
+    expect(findRoute(routes, path)).toBeUndefined();
   });
 
   it('contains top-level DAG editor route', async () => {
@@ -37,7 +40,7 @@ describe('admin router', () => {
     const pageRoutes = shellRoute?.children?.filter((route) => route.component && route.path !== '') ?? [];
 
     expect(typeof shellRoute?.component).toBe('function');
-    expect(pageRoutes.length).toBeGreaterThanOrEqual(14);
+    expect(pageRoutes.length).toBeGreaterThanOrEqual(10);
     expect(pageRoutes.every((route) => typeof route.component === 'function')).toBe(true);
   });
 });

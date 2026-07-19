@@ -32,6 +32,7 @@ import com.workforcehub.im.websocket.ImWebSocketPushService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
@@ -85,7 +86,7 @@ public class ImGroupService {
         }
 
         Long conversationId = IdGenerator.nextId();
-        imGroupRepository.insertGroupConversation(conversationId, title, ownerUserId);
+        imGroupRepository.insertGroupConversation(conversationId, null, title, ownerUserId);
         imGroupRepository.insertGroupProfile(IdGenerator.nextId(), conversationId, "CUSTOM", ownerUserId, ownerUserId);
         imGroupRepository.insertUserMember(IdGenerator.nextId(), conversationId, ownerUserId, "OWNER", "CREATE");
         for (Long memberUserId : normalizedMemberIds) {
@@ -94,6 +95,54 @@ public class ImGroupService {
         return imRepository.findConversationSummaryForUser(conversationId, ownerUserId)
             .map(this::toConversationSummaryResponse)
             .orElseThrow(() -> new BizException(500, "群聊创建失败"));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ImConversationSummaryResponse createOrSyncCurrentEmployeeCourseGroup(String conversationKey,
+                                                                                 String title,
+                                                                                 List<Long> memberUserIds) {
+        Long currentUserId = requireActiveEmployeeUserId();
+        Set<Long> normalizedMemberIds = normalizeUserIds(memberUserIds);
+        normalizedMemberIds.add(currentUserId);
+        if (imGroupRepository.countActiveOrgUsers(normalizedMemberIds) != normalizedMemberIds.size()) {
+            throw new BizException(404, "课程群成员不存在或不可加入群聊");
+        }
+
+        Long conversationId = imRepository.findActiveConversationIdByKey(conversationKey).orElse(null);
+        if (conversationId == null) {
+            Long candidateId = IdGenerator.nextId();
+            try {
+                imGroupRepository.insertGroupConversation(candidateId, conversationKey, title, currentUserId);
+                imGroupRepository.insertGroupProfile(IdGenerator.nextId(), candidateId, "COURSE_CLASS", currentUserId, currentUserId);
+                conversationId = candidateId;
+            } catch (DuplicateKeyException conflict) {
+                conversationId = imRepository.findActiveConversationIdByKey(conversationKey)
+                    .orElseThrow(() -> new BizException(409, "课程班级群创建冲突"));
+            }
+        }
+
+        ImGroupProfileRow profile = imGroupRepository.findActiveGroupProfile(conversationId)
+            .filter(item -> "COURSE_CLASS".equals(item.groupType()))
+            .orElseThrow(() -> new BizException(409, "课程班级群绑定异常"));
+        Long ownerUserId = profile.ownerUserId();
+        int memberChanges = imGroupRepository.upsertUserMember(
+            IdGenerator.nextId(), conversationId, ownerUserId, "OWNER", "COURSE_CLASS");
+        for (Long memberUserId : normalizedMemberIds) {
+            if (!ownerUserId.equals(memberUserId)) {
+                memberChanges += imGroupRepository.upsertUserMember(
+                    IdGenerator.nextId(), conversationId, memberUserId, "MEMBER", "COURSE_CLASS");
+            }
+        }
+        ImConversationSummaryResponse response = imRepository.findConversationSummaryForUser(conversationId, currentUserId)
+            .map(this::toConversationSummaryResponse)
+            .orElseThrow(() -> new BizException(500, "课程班级群同步失败"));
+        if (memberChanges > 0) {
+            pushConversationEventAfterCommit(
+                conversationId,
+                ImWebSocketEvent.of(ImWebSocketEventTypes.GROUP_MEMBERS_ADDED, conversationId, null, null, currentUserId, response)
+            );
+        }
+        return response;
     }
 
     public List<ImConversationMemberResponse> listCurrentEmployeeGroupMembers(Long conversationId) {

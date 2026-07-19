@@ -1,0 +1,11 @@
+{
+  "providerType": "xfyun",
+  "displayName": "科大讯飞星火",
+  "baseUrl": "https://spark-api-open.xf-yun.com/v1",
+  "apiKeyEnv": "XFYUN_SPARK_API_PASSWORD",
+  "modelName": "<开放平台支持的模型名称>",
+  "timeoutSeconds": 180,
+  "maxTokens": 4096,
+  "temperature": 0.2,
+  "enabled": false
+}

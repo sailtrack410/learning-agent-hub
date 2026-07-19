@@ -2,6 +2,7 @@ package com.workforcehub.file.service;
 
 import com.workforcehub.common.exception.BizException;
 import com.workforcehub.common.util.CurrentUserHolder;
+import com.workforcehub.course.service.CourseResourceAccessService;
 import com.workforcehub.im.repository.ImRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -13,15 +14,18 @@ public class FileUploadRules {
     private final FileQuotaPolicyService fileQuotaPolicyService;
     private final ImRepository imRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final CourseResourceAccessService courseResourceAccessService;
 
     public FileUploadRules(StorageUsageLedgerService storageUsageLedgerService,
                            FileQuotaPolicyService fileQuotaPolicyService,
                            ImRepository imRepository,
-                           JdbcTemplate jdbcTemplate) {
+                           JdbcTemplate jdbcTemplate,
+                           CourseResourceAccessService courseResourceAccessService) {
         this.storageUsageLedgerService = storageUsageLedgerService;
         this.fileQuotaPolicyService = fileQuotaPolicyService;
         this.imRepository = imRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.courseResourceAccessService = courseResourceAccessService;
     }
 
     // 员工端文件归属校验：限制 ownerType 白名单，群文件额外校验群成员身份
@@ -29,7 +33,8 @@ public class FileUploadRules {
         if (!"PERSONAL_FILE".equals(ownerType)
             && !"USER_AVATAR".equals(ownerType)
             && !"IM_MESSAGE_PENDING".equals(ownerType)
-            && !"IM_GROUP_FILE".equals(ownerType)) {
+            && !"IM_GROUP_FILE".equals(ownerType)
+            && !"COURSE_RESOURCE".equals(ownerType)) {
             throw new BizException(400, "员工端不支持该文件归属");
         }
         if ("IM_GROUP_FILE".equals(ownerType)) {
@@ -40,6 +45,13 @@ public class FileUploadRules {
             if (!imRepository.existsActiveUserMembership(ownerId, userId)) {
                 throw new BizException(403, "无权访问该群聊");
             }
+            return;
+        }
+        if ("COURSE_RESOURCE".equals(ownerType)) {
+            if (ownerId == null) {
+                throw new BizException(400, "课程资源必须指定课程");
+            }
+            courseResourceAccessService.requireTeacherCourse(CurrentUserHolder.requireUserId(), ownerId);
             return;
         }
         if (ownerId != null) {

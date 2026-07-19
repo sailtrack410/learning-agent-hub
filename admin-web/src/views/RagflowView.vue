@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { adminApi } from '@/api/admin';
 import type { EntityId, LlmModelResponse, OrgDepartmentTreeNodeResponse, OrgPositionResponse, RagflowAclResponse, RagflowDocumentResponse, RagflowGlobalSettingResponse, RagflowSearchTestResponse, RagflowSpaceResponse, RbacRoleResponse } from '@/api/types';
 import { errorMessage, roleCodeLabel } from '@/utils/format';
@@ -13,6 +13,8 @@ import RagflowListPanel from '@/components/ragflow/RagflowListPanel.vue';
 import RagflowSettingsDialog from '@/components/ragflow/RagflowSettingsDialog.vue';
 import RagflowSpaceDeleteDialog from '@/components/ragflow/RagflowSpaceDeleteDialog.vue';
 import RagflowUploadDialog from '@/components/ragflow/RagflowUploadDialog.vue';
+import AdminHeroBanner from '@/components/AdminHeroBanner.vue';
+import ragflowHero from '@/assets/education/admin-ragflow-hero.webp';
 import '@/styles/ragflow.css';
 
 type UploadQueueStatus = 'READY' | 'HASHING' | 'TICKET' | 'UPLOADING' | 'CONFIRMING' | 'REGISTERING' | 'DONE' | 'FAILED';
@@ -37,6 +39,7 @@ const reingestingId = ref<EntityId | null>(null);
 const deletingId = ref<EntityId | null>(null);
 const deletingSpace = ref(false);
 const items = ref<RagflowSpaceResponse[]>([]);
+const spaceTotal = ref(0);
 const globalSetting = ref<RagflowGlobalSettingResponse | null>(null);
 const selected = ref<RagflowSpaceResponse | null>(null);
 const settingsSpace = ref<RagflowSpaceResponse | null>(null);
@@ -59,6 +62,7 @@ const documentDeleteVisible = ref(false);
 const documentDeleteTarget = ref<RagflowDocumentResponse | null>(null);
 const spaceDeleteVisible = ref(false);
 const spaceDeleteTarget = ref<RagflowSpaceResponse | null>(null);
+let documentPollTimer: number | undefined;
 
 const form = reactive({
   spaceName: '',
@@ -142,6 +146,7 @@ const documentColumns: TableColumn[] = [
   { key: 'title', label: '文件' },
   { key: 'parserType', label: '解析' },
   { key: 'ingestStatus', label: '入库状态' },
+  { key: 'ingestProgress', label: '处理进度' },
   { key: 'vectorStatus', label: '向量状态' },
   { key: 'chunkCount', label: '切片' },
   { key: 'createdAt', label: '上传时间' },
@@ -157,6 +162,9 @@ const aclColumns: TableColumn[] = [
 
 const inDetail = computed(() => Boolean(selected.value));
 const currentTitle = computed(() => selected.value?.spaceName ?? '知识库');
+const activeSpaceCount = computed(() => items.value.filter((item) => item.status === 'ACTIVE').length);
+const documentTotal = computed(() => items.value.reduce((total, item) => total + item.documentCount, 0));
+const chunkTotal = computed(() => items.value.reduce((total, item) => total + item.chunkCount, 0));
 const aclSubjectOptions = computed(() => {
   if (aclForm.subjectType === 'ROLE') {
     return roles.value.map((item) => ({ id: item.roleId, name: item.roleName || roleCodeLabel(item.roleCode) }));
@@ -173,6 +181,7 @@ onMounted(() => {
   void loadAclOptions();
   void loadLlmModels();
 });
+onBeforeUnmount(() => window.clearTimeout(documentPollTimer));
 
 async function loadAclOptions() {
   try {
@@ -198,6 +207,7 @@ async function loadList() {
   try {
     const res = await adminApi.ragflow.spaces(1, 100, keyword.value.trim() || undefined);
     items.value = res.list;
+    spaceTotal.value = res.total;
     if (selected.value) {
       const latest = res.list.find((item) => String(item.spaceId) === String(selected.value?.spaceId));
       if (latest) {
@@ -294,6 +304,7 @@ async function openSpace(row: RagflowSpaceResponse) {
 }
 
 function backToList() {
+  window.clearTimeout(documentPollTimer);
   selected.value = null;
   documents.value = [];
   searchResult.value = null;
@@ -339,11 +350,18 @@ async function loadDocuments() {
   try {
     documents.value = await adminApi.ragflow.documents(selected.value.spaceId);
     await loadList();
+    scheduleDocumentPoll();
   } catch (e) {
     toast.error(errorMessage(e));
   } finally {
     docLoading.value = false;
   }
+}
+
+function scheduleDocumentPoll() {
+  window.clearTimeout(documentPollTimer);
+  if (!documents.value.some((document) => document.ingestStatus === 'PENDING' || document.ingestStatus === 'RUNNING')) return;
+  documentPollTimer = window.setTimeout(loadDocuments, 2000);
 }
 
 function openCreate() {
@@ -756,6 +774,21 @@ function normalizeUploadHeaders(headers: Record<string, string>, file: File) {
 
 <template>
   <main class="page-grid ragflow-page">
+    <AdminHeroBanner
+      v-if="!inDetail"
+      eyebrow="课程知识治理"
+      title="让课程资料可检索、可追踪、可维护"
+      description="统一管理课程知识库、解析进度、向量切片与检索配置。"
+      :image="ragflowHero"
+    >
+      <template #metrics>
+        <div class="hero-metric"><strong>{{ spaceTotal }}</strong><span>知识库</span></div>
+        <div class="hero-metric"><strong>{{ activeSpaceCount }}</strong><span>启用中</span></div>
+        <div class="hero-metric"><strong>{{ documentTotal }}</strong><span>课程文件</span></div>
+        <div class="hero-metric"><strong>{{ chunkTotal }}</strong><span>知识切片</span></div>
+      </template>
+    </AdminHeroBanner>
+
     <RagflowListPanel
       v-if="!inDetail"
       v-model:keyword="keyword"

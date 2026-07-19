@@ -19,9 +19,9 @@ import java.io.IOException;
 
 /**
  * 用户类型路径校验
- * 路径隔离过滤器：/api/admin/** 仅允许管理员访问，/api/employee/** 仅允许员工访问
+ * 路径隔离过滤器：/api/admin/** 仅允许管理员访问，/api/employee/** 仅允许学生或教师访问
  *
- * 保证 /api/employee/** 只允许 UserType=USER 访问
+ * 保证 /api/employee/** 只允许 UserType=USER（学生或教师）访问
  *      /api/admin/**    只允许 UserType=ADMIN 访问
  *
  * 这样即使员工和管理员共享同一套 Session 存储，也不会发生身份串扰。
@@ -57,7 +57,7 @@ public class UserTypePathFilter extends OncePerRequestFilter {
             UserType userType = user.getUserType();
 
             if (uri.startsWith(EMPLOYEE_PATH_PREFIX) && userType != UserType.USER) {
-                writeForbidden(response, "当前账号不是员工身份，无法访问员工端");
+                writeForbidden(response, "当前账号不是学生或教师身份，无法访问学习端");
                 return;
             }
             if (uri.startsWith(ADMIN_PATH_PREFIX) && userType != UserType.ADMIN) {

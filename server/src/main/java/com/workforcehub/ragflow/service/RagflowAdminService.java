@@ -480,6 +480,9 @@ public class RagflowAdminService {
         response.setLatestIngestJobId(row.latestIngestJobId());
         response.setIngestJobStatus(row.ingestJobStatus());
         response.setIngestJobStatusName(statusName(row.ingestJobStatus()));
+        response.setIngestProgressPercent(row.ingestProgressPercent());
+        response.setIngestStage(row.ingestStage());
+        response.setIngestStageName(stageName(row.ingestStage()));
         response.setVectorStatus(row.vectorStatus());
         response.setVectorStatusName(statusName(row.vectorStatus()));
         response.setChunkCount(row.chunkCount());
@@ -487,6 +490,19 @@ public class RagflowAdminService {
         response.setCreatedAt(row.createdAt());
         response.setUpdatedAt(row.updatedAt());
         return response;
+    }
+
+    private String stageName(String stage) {
+        if ("QUEUED".equals(stage)) return "等待处理";
+        if ("READ_FILE".equals(stage)) return "读取文件";
+        if ("PARSE_CONTENT".equals(stage)) return "解析内容";
+        if ("SPLIT_CHUNKS".equals(stage)) return "切分文本";
+        if ("VECTORIZE".equals(stage)) return "生成向量";
+        if ("WRITE_VECTOR".equals(stage)) return "写入向量库";
+        if ("COMMIT_INDEX".equals(stage)) return "提交索引";
+        if ("COMPLETED".equals(stage)) return "入库完成";
+        if ("FAILED".equals(stage)) return "处理失败";
+        return stage;
     }
 
     private RagflowSearchTestResponse.Hit toSearchHit(RagflowSearchHitRow row) {

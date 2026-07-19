@@ -23,23 +23,27 @@ const props = defineProps<{
   display: grid;
   place-items: center;
   padding: var(--space-24);
-  background: rgba(15, 20, 18, 0.42);
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(0.45rem);
   overflow: auto;
 }
 
 .ui-dialog {
+  box-sizing: border-box;
+  min-width: 0;
   width: min(36rem, 100%);
   max-height: calc(100vh - var(--space-56));
   overflow: auto;
   padding: var(--space-24);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-12);
+  border-radius: var(--radius-20);
   background: var(--surface-panel);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-float);
 }
 
 .ui-dialog.wide {
   width: min(56rem, 100%);
+  min-width: 0;
 }
 
 .ui-dialog.flush {

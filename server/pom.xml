@@ -14,8 +14,8 @@
     <groupId>com.workforcehub</groupId>
     <artifactId>workforce-hub</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>workforce-hub</name>
-    <description>Enterprise Collaborative HR Platform</description>
+    <name>learning-agent-hub</name>
+    <description>高校个性化学习多智能体平台</description>
 
     <properties>
         <java.version>17</java.version>

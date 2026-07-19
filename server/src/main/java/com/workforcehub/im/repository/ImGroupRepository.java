@@ -349,15 +349,19 @@ public class ImGroupRepository {
         );
     }
 
-    public void insertGroupConversation(Long conversationId, String title, Long operatorId) {
+    public void insertGroupConversation(Long conversationId,
+                                        String conversationKey,
+                                        String title,
+                                        Long operatorId) {
         jdbcTemplate.update("""
             INSERT INTO im_conversation
-                (id, conversation_type, title, last_message_seq,
+                (id, conversation_type, conversation_key, title, last_message_seq,
                  status, created_by, updated_by, is_deleted)
             VALUES
-                (?, 'GROUP', ?, 0, 'ACTIVE', ?, ?, 0)
+                (?, 'GROUP', ?, ?, 0, 'ACTIVE', ?, ?, 0)
             """,
             conversationId,
+            conversationKey,
             title,
             operatorId,
             operatorId
@@ -403,12 +407,12 @@ public class ImGroupRepository {
         );
     }
 
-    public void upsertUserMember(Long memberRowId,
-                                 Long conversationId,
-                                 Long userId,
-                                 String memberRole,
-                                 String joinSource) {
-        jdbcTemplate.update("""
+    public int upsertUserMember(Long memberRowId,
+                                Long conversationId,
+                                Long userId,
+                                String memberRole,
+                                String joinSource) {
+        return jdbcTemplate.update("""
             INSERT INTO im_conversation_member
                 (id, conversation_id, member_type, member_id, member_role, join_source, last_read_seq, status)
             VALUES

@@ -13,4 +13,10 @@ describe('markdown utils', () => {
       '<p><strong>&lt;script&gt;alert(1)&lt;/script&gt;</strong></p>'
     );
   });
+
+  it('renders markdown tables used by generated learning resources', () => {
+    expect(renderMarkdownText('| 概念 | 说明 |\n| --- | --- |\n| 局部变量 | 请求隔离 |')).toBe(
+      '<table><thead><tr><th>概念</th><th>说明</th></tr></thead><tbody><tr><td>局部变量</td><td>请求隔离</td></tr></tbody></table>'
+    );
+  });
 });

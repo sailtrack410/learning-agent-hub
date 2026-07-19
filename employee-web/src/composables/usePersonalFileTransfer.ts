@@ -13,7 +13,7 @@ export interface PersonalAttachmentUploadResult {
   deduplicated: boolean;
 }
 
-export type EmployeeUploadOwnerType = 'PERSONAL_FILE' | 'USER_AVATAR' | 'IM_MESSAGE_PENDING' | 'IM_GROUP_FILE';
+export type EmployeeUploadOwnerType = 'PERSONAL_FILE' | 'USER_AVATAR' | 'IM_MESSAGE_PENDING' | 'IM_GROUP_FILE' | 'COURSE_RESOURCE';
 
 export interface EmployeeAttachmentUploadOptions {
   ownerType: EmployeeUploadOwnerType;
@@ -122,6 +122,14 @@ export function usePersonalFileTransfer() {
     });
   }
 
+  async function uploadCourseResource(file: File, courseId: EntityId): Promise<PersonalAttachmentUploadResult> {
+    return uploadAttachment(file, {
+      ownerType: 'COURSE_RESOURCE',
+      ownerId: courseId,
+      clientRequestPrefix: 'course-resource',
+    });
+  }
+
   function uploadToTicketTarget(uploadUrl: string, file: File, uploadHeaders: Record<string, string>) {
     if (/^https?:\/\//i.test(uploadUrl)) {
       return fetch(uploadUrl, {
@@ -152,6 +160,7 @@ export function usePersonalFileTransfer() {
     uploadAvatarAttachment,
     uploadImMessageAttachment,
     uploadGroupFileAttachment,
+    uploadCourseResource,
     uploadToTicketTarget,
     resolveDownloadUrl,
   };

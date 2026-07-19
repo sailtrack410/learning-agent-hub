@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
@@ -84,6 +85,23 @@ public class LocalStorageProvider implements StorageProvider {
             return new StorageObjectResource(new FileSystemResource(path), Files.size(path));
         } catch (Exception e) {
             throw new BizException(500, "文件服务异常，请稍后重试");
+        }
+    }
+
+    @Override
+    public void storeObject(String bucketName, String objectKey, String mimeType, InputStream inputStream, long size) {
+        Path path = objectPath(objectKey);
+        try {
+            Files.createDirectories(path.getParent());
+            Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.size(path) != size) {
+                Files.deleteIfExists(path);
+                throw new BizException(500, "预览文件写入不完整");
+            }
+        } catch (BizException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BizException(500, "预览文件保存失败");
         }
     }
 

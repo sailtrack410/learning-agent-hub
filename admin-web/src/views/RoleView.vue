@@ -31,9 +31,9 @@ const roleForm = reactive({ roleCode: '', roleName: '', status: 'ACTIVE' });
 
 const roleCodeOptions = [
   { value: 'ADMIN', label: '系统管理员' },
-  { value: 'HR_MANAGER', label: '人事管理员' },
+  { value: 'HR_MANAGER', label: '教育运营管理员' },
   { value: 'DEPT_MANAGER', label: '部门主管' },
-  { value: 'EMPLOYEE', label: '普通员工' },
+  { value: 'EMPLOYEE', label: '普通运营成员' },
 ];
 
 const roleColumns: TableColumn[] = [
@@ -104,7 +104,7 @@ function openAdminRoles(user: RbacAdminUserRoleResponse) {
 function newRole() {
   selectedRoleId.value = null;
   roleForm.roleCode = 'EMPLOYEE';
-  roleForm.roleName = '普通员工';
+  roleForm.roleName = '普通运营成员';
   roleForm.status = 'ACTIVE';
   selectedPermissionIds.value = new Set();
   roleDialogVisible.value = true;

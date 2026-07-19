@@ -50,7 +50,7 @@ const opened = computed({
               <option value="PRIVATE">私有</option>
               <option value="ROLE">按角色</option>
               <option value="DEPARTMENT">按部门</option>
-              <option value="POSITION">按岗位</option>
+              <option value="POSITION">按课程角色</option>
               <option value="PUBLIC">全员可查阅</option>
             </select>
           </label>

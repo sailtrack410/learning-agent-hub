@@ -6,6 +6,7 @@ const roleSource = readSource('./RoleView.vue');
 const workflowSource = readSource('./WorkflowGovernanceView.vue');
 const tableSource = readSource('../components/AdminTable.vue');
 const dialogSource = readSource('../components/AdminDialog.vue');
+const agentTasksSource = readSource('./AgentTasksView.vue');
 
 describe('admin P0 interactions', () => {
   it('protects the built-in super admin role and confirms destructive changes', () => {
@@ -36,6 +37,16 @@ describe('admin P0 interactions', () => {
     expect(dialogSource).toContain("if (event.key !== 'Tab') return");
     expect(dialogSource).toContain("document.querySelectorAll<HTMLElement>('.admin-dialog')");
     expect(dialogSource).toContain('previousFocus?.focus()');
+  });
+
+  it('covers AI task metrics, task detail, audit trace and timeout governance', () => {
+    expect(agentTasksSource).toContain('adminApi.agentTasks.metrics()');
+    expect(agentTasksSource).toContain('adminApi.agentTasks.failureSummary()');
+    expect(agentTasksSource).toContain('adminApi.agentTasks.detail(task.taskId)');
+    expect(agentTasksSource).toContain('adminApi.agentTasks.toolCalls(task.taskId)');
+    expect(agentTasksSource).toContain('adminApi.agentTasks.audits(task.taskId)');
+    expect(agentTasksSource).toContain('adminApi.agentTasks.timeoutScan(batchSize)');
+    expect(agentTasksSource).toContain('await loadPage()');
   });
 });
 

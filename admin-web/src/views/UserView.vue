@@ -7,6 +7,7 @@ import { errorMessage, formatDateTime, genderLabel, statusLabel } from '@/utils/
 import { useUserViewStore } from '@/stores/userView';
 import { useToast } from '@/composables/useToast';
 import AdminPanel from '@/components/AdminPanel.vue';
+import AdminHeroBanner from '@/components/AdminHeroBanner.vue';
 import AdminFilterBar from '@/components/AdminFilterBar.vue';
 import AdminTable, { type TableColumn } from '@/components/AdminTable.vue';
 import AdminDetailList, { type DetailRow } from '@/components/AdminDetailList.vue';
@@ -15,6 +16,8 @@ import AdminPagination from '@/components/AdminPagination.vue';
 import OrgMindTree from '@/components/OrgMindTree.vue';
 import AdminConfirmDialog from '@/components/AdminConfirmDialog.vue';
 import AdminDialog from '@/components/AdminDialog.vue';
+import { maxLength, mobileFormat, requiredText } from '@/utils/validation';
+import usersHero from '@/assets/education/admin-users-hero.webp';
 
 const store = useUserViewStore();
 const toast = useToast();
@@ -28,10 +31,11 @@ const selectedDetail = ref<OrgUserDetailResponse | null>(null);
 const depts = ref<OrgDepartmentTreeNodeResponse[]>([]);
 const positions = ref<OrgPositionResponse[]>([]);
 const creating = ref(false);
-const createForm = reactive({ realName: '', gender: 'MALE', mobile: '', primaryDeptId: undefined as number | undefined, positionId: undefined as number | undefined, employmentStatus: 'ACTIVE', status: 'ACTIVE' });
+const createForm = reactive({ employeeNo: '', realName: '', gender: 'MALE', mobile: '', primaryDeptId: undefined as EntityId | undefined, positionId: undefined as EntityId | undefined, employmentStatus: 'ACTIVE', status: 'ACTIVE' });
 const departmentCreating = ref(false);
 const departmentFormOpen = ref(false);
 const departmentForm = reactive({ parentId: undefined as EntityId | undefined, deptCode: '', deptName: '' });
+const userCreateTouched = reactive({ employeeNo: false, realName: false, mobile: false, primaryDeptId: false, positionId: false });
 const ORG_ROOT_ID = '__org_root__';
 const orgViewportRef = ref<HTMLElement | null>(null);
 const orgCanvasRef = ref<HTMLElement | null>(null);
@@ -45,6 +49,16 @@ let orgLinkFrame = 0;
 let orgPanClearTimer = 0;
 let orgResizeObserver: ResizeObserver | null = null;
 
+const userCreateErrors = computed(() => ({
+  employeeNo: maxLength(createForm.employeeNo, 64, '学工号'),
+  realName: requiredText(createForm.realName, '姓名') || maxLength(createForm.realName, 64, '姓名'),
+  mobile: maxLength(createForm.mobile, 32, '手机号') || mobileFormat(createForm.mobile),
+  primaryDeptId: createForm.primaryDeptId == null ? '请选择学院或班级' : '',
+  positionId: createForm.positionId == null ? '请选择教育身份' : '',
+}));
+const userCreateInvalid = computed(() => Object.values(userCreateErrors.value).some(Boolean));
+const departmentNameError = computed(() => requiredText(departmentForm.deptName, '学院或班级名称') || maxLength(departmentForm.deptName, 128, '学院或班级名称'));
+
 interface OrgLink {
   key: string;
   path: string;
@@ -52,8 +66,8 @@ interface OrgLink {
 
 const columns: TableColumn[] = [
   { key: 'realName', label: '姓名' },
-  { key: 'primaryDeptName', label: '部门' },
-  { key: 'positionName', label: '岗位' },
+  { key: 'primaryDeptName', label: '学院 / 班级' },
+  { key: 'positionName', label: '教育身份' },
   { key: 'employmentStatus', label: '状态' },
 ];
 
@@ -65,8 +79,8 @@ const detailRows = computed<DetailRow[]>(() => {
     { label: '性别', value: genderLabel(r.gender) },
     { label: '手机', value: r.mobile ?? '-' },
     { label: '邮箱', value: r.email ?? '-' },
-    { label: '部门', value: r.primaryDeptName ?? '-' },
-    { label: '岗位', value: r.positionName ?? '-' },
+    { label: '学院 / 班级', value: r.primaryDeptName ?? '-' },
+    { label: '教育身份', value: r.positionName ?? '-' },
     { label: '上级', value: r.managerName ?? '-' },
     { label: '入职日期', value: r.hireDate ?? '-' },
     { label: '在职状态', value: statusLabel(r.employmentStatus ?? '') },
@@ -80,6 +94,7 @@ function flattenDepts(nodes: OrgDepartmentTreeNodeResponse[], depth = 0): { node
 }
 
 const flatDepts = computed(() => flattenDepts(depts.value));
+const activePositionCount = computed(() => positions.value.filter((item) => item.status === 'ACTIVE').length);
 
 const orgRootNodes = computed<OrgDepartmentTreeNodeResponse[]>(() => {
   if (!depts.value.length) return [];
@@ -87,7 +102,7 @@ const orgRootNodes = computed<OrgDepartmentTreeNodeResponse[]>(() => {
     id: ORG_ROOT_ID,
     parentId: null,
     treePath: null,
-    deptCode: '全部部门',
+    deptCode: '全部学院 / 班级',
     deptName: '组织架构',
     deptType: 'ROOT',
     deptLevel: -1,
@@ -178,11 +193,14 @@ async function loadMeta() {
 }
 
 async function handleCreate() {
+  if (userCreateInvalid.value) return;
   creating.value = true;
   try {
     await adminApi.org.createUser(createForm);
+    createForm.employeeNo = '';
     createForm.realName = '';
     createForm.mobile = '';
+    Object.keys(userCreateTouched).forEach((key) => { userCreateTouched[key as keyof typeof userCreateTouched] = false; });
     await Promise.all([loadList(), loadMeta()]);
   } catch (e) {
     toast.error(errorMessage(e));
@@ -199,6 +217,7 @@ function startCreateDepartment(parent?: OrgDepartmentTreeNodeResponse | null) {
 }
 
 async function handleCreateDepartment() {
+  if (departmentNameError.value) return;
   departmentCreating.value = true;
   try {
     const parentId = departmentForm.parentId;
@@ -383,24 +402,37 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="page-grid">
-    <AdminPanel :span="12" title="组织架构">
+    <AdminHeroBanner
+      eyebrow="高校教学组织"
+      title="用户、学院与班级关系一目了然"
+      description="统一维护学生、教师、学院班级与教育身份，支持组织关系查看和账号管理。"
+      :image="usersHero"
+    >
+      <template #metrics>
+        <div class="hero-metric"><strong>{{ store.pagination.total }}</strong><span>用户</span></div>
+        <div class="hero-metric"><strong>{{ flatDepts.length }}</strong><span>学院 / 班级</span></div>
+        <div class="hero-metric"><strong>{{ activePositionCount }}</strong><span>教育身份</span></div>
+      </template>
+    </AdminHeroBanner>
+
+    <AdminPanel :span="12" title="教学组织">
       <template #actions>
-        <button class="icon-button" title="新建部门" @click="startCreateDepartment(null)"><Plus :size="16" /></button>
+        <button class="icon-button" title="新建学院或班级" @click="startCreateDepartment(null)"><Plus :size="16" /></button>
         <button class="icon-button" title="重置视图" @click="resetOrgPan"><Crosshair :size="16" /></button>
         <button class="secondary-button" title="刷新" @click="loadMeta"><RefreshCcw :size="16" />刷新</button>
       </template>
 
       <div v-if="departmentFormOpen" class="department-form stack-form">
-        <label>上级部门
+        <label>上级组织
           <select v-model="departmentForm.parentId">
-            <option :value="undefined">顶级部门</option>
+            <option :value="undefined">顶级学院</option>
             <option v-for="f in flatDepts" :key="f.node.id" :value="f.node.id">{{ f.node.deptName }}</option>
           </select>
         </label>
-        <label>部门名称 <input v-model="departmentForm.deptName" /></label>
+        <label>学院或班级名称 <input v-model="departmentForm.deptName" :aria-invalid="Boolean(departmentNameError)" maxlength="128" /><small v-if="departmentNameError" class="field-error">{{ departmentNameError }}</small></label>
         <div class="department-actions">
           <button class="secondary-button" @click="departmentFormOpen = false">取消</button>
-          <button class="primary-button" :disabled="departmentCreating || !departmentForm.deptName.trim()" @click="handleCreateDepartment">
+          <button class="primary-button" :disabled="departmentCreating || Boolean(departmentNameError)" @click="handleCreateDepartment">
             <Plus :size="16" /> 创建
           </button>
         </div>
@@ -447,11 +479,11 @@ onBeforeUnmount(() => {
             @add-department="startCreateDepartment"
             @delete-department="handleDeleteDepartment"
           />
-          <div v-else class="empty-state">无部门</div>
+          <div v-else class="empty-state">暂无学院或班级</div>
         </div>
 
         <div v-if="unassignedUsers.length" class="org-users unassigned">
-          <span class="org-empty">未分配部门</span>
+          <span class="org-empty">未分配学院或班级</span>
           <button
             v-for="user in unassignedUsers"
             :key="user.userId"
@@ -468,14 +500,14 @@ onBeforeUnmount(() => {
       </div>
     </AdminPanel>
 
-    <AdminPanel :span="7" title="人员列表">
+    <AdminPanel :span="7" title="用户列表">
       <template #actions>
         <button class="secondary-button" title="刷新" @click="loadList"><RefreshCcw :size="16" />刷新</button>
       </template>
-      <AdminFilterBar>
+      <AdminFilterBar @search="loadList">
         <input v-model="store.filters.keyword" placeholder="搜索姓名" @keyup.enter="loadList" />
         <select v-model="store.filters.deptId" @change="loadList">
-          <option :value="undefined">全部部门</option>
+          <option :value="undefined">全部学院 / 班级</option>
           <option v-for="f in flatDepts" :key="f.node.id" :value="f.node.id">{{ '&nbsp;'.repeat(f.depth * 4) }}{{ f.node.deptName }}</option>
         </select>
         <select v-model="store.filters.employmentStatus" @change="loadList">
@@ -484,27 +516,29 @@ onBeforeUnmount(() => {
           <option value="PROBATION">试用</option>
           <option value="RESIGNED">离职</option>
         </select>
-        <button class="primary-button" @click="loadList">搜索</button>
       </AdminFilterBar>
 
       <details class="create-section">
-        <summary class="create-summary">新建员工</summary>
+        <summary class="create-summary">新建用户</summary>
         <div class="stack-form create-form">
-          <label>姓名 <input v-model="createForm.realName" /></label>
-          <label>手机 <input v-model="createForm.mobile" /></label>
-          <label>部门
-            <select v-model="createForm.primaryDeptId">
+          <label>学工号 <input v-model="createForm.employeeNo" :aria-invalid="userCreateTouched.employeeNo && Boolean(userCreateErrors.employeeNo)" maxlength="64" placeholder="可选" @blur="userCreateTouched.employeeNo = true" /><small v-if="userCreateTouched.employeeNo && userCreateErrors.employeeNo" class="field-error">{{ userCreateErrors.employeeNo }}</small></label>
+          <label>姓名 <input v-model="createForm.realName" :aria-invalid="userCreateTouched.realName && Boolean(userCreateErrors.realName)" maxlength="64" @blur="userCreateTouched.realName = true" /><small v-if="userCreateTouched.realName && userCreateErrors.realName" class="field-error">{{ userCreateErrors.realName }}</small></label>
+          <label>手机 <input v-model="createForm.mobile" :aria-invalid="userCreateTouched.mobile && Boolean(userCreateErrors.mobile)" maxlength="32" inputmode="tel" placeholder="可选" @blur="userCreateTouched.mobile = true" /><small v-if="userCreateTouched.mobile && userCreateErrors.mobile" class="field-error">{{ userCreateErrors.mobile }}</small></label>
+          <label>学院 / 班级
+            <select v-model="createForm.primaryDeptId" :aria-invalid="userCreateTouched.primaryDeptId && Boolean(userCreateErrors.primaryDeptId)" @blur="userCreateTouched.primaryDeptId = true">
               <option :value="undefined">请选择</option>
               <option v-for="f in flatDepts" :key="f.node.id" :value="f.node.id">{{ f.node.deptName }}</option>
             </select>
+            <small v-if="userCreateTouched.primaryDeptId && userCreateErrors.primaryDeptId" class="field-error">{{ userCreateErrors.primaryDeptId }}</small>
           </label>
-          <label>岗位
-            <select v-model="createForm.positionId">
+          <label>教育身份
+            <select v-model="createForm.positionId" :aria-invalid="userCreateTouched.positionId && Boolean(userCreateErrors.positionId)" @blur="userCreateTouched.positionId = true">
               <option :value="undefined">请选择</option>
               <option v-for="p in positions" :key="p.id" :value="p.id">{{ p.positionName }}</option>
             </select>
+            <small v-if="userCreateTouched.positionId && userCreateErrors.positionId" class="field-error">{{ userCreateErrors.positionId }}</small>
           </label>
-          <button class="primary-button" :disabled="creating || !createForm.realName || !createForm.primaryDeptId" @click="handleCreate">
+          <button class="primary-button" :disabled="creating || userCreateInvalid" @click="handleCreate">
             <Plus :size="16" /> 创建
           </button>
         </div>
@@ -530,7 +564,7 @@ onBeforeUnmount(() => {
       />
     </AdminPanel>
 
-    <AdminDialog v-model:visible="detailDialogOpen" title="员工详情" labelled-by="user-detail-title" width="min(560px, 92vw)" @close="closeUserDetail">
+    <AdminDialog v-model:visible="detailDialogOpen" title="用户详情" labelled-by="user-detail-title" width="min(560px, 92vw)" @close="closeUserDetail">
       <AdminSkeleton v-if="detailLoading" :lines="5" />
       <AdminDetailList v-else-if="selectedDetail" :rows="detailRows" />
       <div v-else class="empty-state">无数据</div>
@@ -538,8 +572,8 @@ onBeforeUnmount(() => {
 
     <AdminConfirmDialog
       v-model:visible="departmentDeleteVisible"
-      title="删除部门"
-      message="删除部门"
+      title="删除学院或班级"
+      message="删除学院或班级"
       confirm-label="删除"
       :danger="true"
       @confirm="confirmDeleteDepartment"

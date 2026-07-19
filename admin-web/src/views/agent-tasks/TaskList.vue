@@ -42,13 +42,13 @@ const columns: TableColumn[] = [
       </select>
       <select v-model="store.filters.contextType">
         <option value="">全部场景</option>
-        <option value="USER_QUERY">员工咨询</option>
-        <option value="WF_REQUEST">审批申请</option>
-        <option value="IM_GROUP">群聊消息</option>
+        <option value="USER_QUERY">学习咨询</option>
+        <option value="WF_REQUEST">历史流程任务</option>
+        <option value="IM_GROUP">学习群消息</option>
       </select>
       <select v-model="store.filters.triggeredByType">
         <option value="">全部来源</option>
-        <option value="USER">员工</option>
+        <option value="USER">学生或教师</option>
         <option value="ADMIN">管理员</option>
         <option value="SYSTEM">系统</option>
       </select>

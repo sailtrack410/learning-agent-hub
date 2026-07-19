@@ -8,18 +8,15 @@ const DashboardView = () => import('@/views/DashboardView.vue');
 const AgentTasksView = () => import('@/views/AgentTasksView.vue');
 const AgentConfigView = () => import('@/views/AgentConfigView.vue');
 const AgentDagView = () => import('@/views/AgentDagView.vue');
-const WorkflowGovernanceView = () => import('@/views/WorkflowGovernanceView.vue');
-const LeaveGovernanceView = () => import('@/views/LeaveGovernanceView.vue');
-const LeaveTypeView = () => import('@/views/LeaveTypeView.vue');
 const RoleView = () => import('@/views/RoleView.vue');
-const AttendanceView = () => import('@/views/AttendanceView.vue');
-const DepartmentView = () => import('@/views/DepartmentView.vue');
-const PositionView = () => import('@/views/PositionView.vue');
 const UserView = () => import('@/views/UserView.vue');
 const FileCleanupView = () => import('@/views/FileCleanupView.vue');
 const RagflowView = () => import('@/views/RagflowView.vue');
 const SettingsView = () => import('@/views/SettingsView.vue');
-const SystemGovernanceView = () => import('@/views/SystemGovernanceView.vue');
+const ImOutboxGovernanceView = () => import('@/views/ImOutboxGovernanceView.vue');
+const PermissionView = () => import('@/views/PermissionView.vue');
+const AuditLogView = () => import('@/views/AuditLogView.vue');
+const ContentSafetyView = () => import('@/views/ContentSafetyView.vue');
 
 export const adminRoutes = [
   {
@@ -41,18 +38,16 @@ export const adminRoutes = [
       { path: 'dashboard', name: 'admin-dashboard', component: DashboardView },
       { path: 'agent-tasks', name: 'admin-agent-tasks', component: AgentTasksView, meta: { permission: 'ADMIN_AGENT_TASK_MANAGE' } },
       { path: 'agent-config', name: 'admin-agent-config', component: AgentConfigView, meta: { permission: 'ADMIN_AGENT_MANAGE' } },
-      { path: 'workflow', name: 'admin-workflow', component: WorkflowGovernanceView, meta: { permission: 'ADMIN_WORKFLOW_MANAGE' } },
-      { path: 'leave', name: 'admin-leave', component: LeaveGovernanceView, meta: { permission: 'ADMIN_LEAVE_MANAGE' } },
-      { path: 'leave-types', name: 'admin-leave-types', component: LeaveTypeView, meta: { permission: 'ADMIN_LEAVE_MANAGE' } },
       { path: 'roles', name: 'admin-roles', component: RoleView, meta: { permission: 'ADMIN_RBAC_MANAGE' } },
-      { path: 'attendance', name: 'admin-attendance', component: AttendanceView, meta: { permission: 'ADMIN_ATTENDANCE_MANAGE' } },
-      { path: 'departments', name: 'admin-departments', component: DepartmentView, meta: { permission: 'ADMIN_ORG_MANAGE' } },
-      { path: 'positions', name: 'admin-positions', component: PositionView, meta: { permission: 'ADMIN_ORG_MANAGE' } },
       { path: 'users', name: 'admin-users', component: UserView, meta: { permission: 'ADMIN_ORG_MANAGE' } },
       { path: 'files', name: 'admin-files', component: FileCleanupView, meta: { permission: 'ADMIN_FILE_MANAGE' } },
       { path: 'ragflow', name: 'admin-ragflow', component: RagflowView, meta: { permission: 'ADMIN_RAGFLOW_MANAGE' } },
       { path: 'ai-models', name: 'admin-ai-models', component: SettingsView, meta: { permission: 'ADMIN_AGENT_MANAGE' } },
-      { path: 'system', name: 'admin-system', component: SystemGovernanceView },
+      { path: 'content-safety', name: 'admin-content-safety', component: ContentSafetyView, meta: { permission: 'ADMIN_CONTENT_SAFETY_MANAGE' } },
+      { path: 'system', name: 'admin-system', redirect: '/audit-logs' },
+      { path: 'permissions', name: 'admin-permissions', component: PermissionView, meta: { permission: 'ADMIN_RBAC_MANAGE' } },
+      { path: 'audit-logs', name: 'admin-audit-logs', component: AuditLogView },
+      { path: 'message-delivery', name: 'admin-message-delivery', component: ImOutboxGovernanceView },
       { path: 'settings', name: 'admin-settings', component: SettingsView, meta: { permission: 'ADMIN_NOTIFICATION_CHANNEL_MANAGE' } },
     ],
   },

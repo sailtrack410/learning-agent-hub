@@ -20,6 +20,16 @@
   - 员工端 IM 会话、群治理、消息、WebSocket 推送和 IM x Agent 会话接口 API 文档与测试用例
 - `module-agent/`
   - Agent 治理、授权、任务、工具调用与审计接口 API 文档和测试用例
+- `module-course/`
+  - 教育版课程、章节、文章、资料入库和协作教师接口文档与测试用例
+- `module-profile/`
+  - 学生画像对话、维度纠正和版本追溯接口文档与测试用例
+- `module-assessment/`
+  - 学习评估、判分、知识点掌握度和画像联动接口文档与测试用例
+- `module-learningpath/`
+  - 个性化学习路径、推荐原因和节点进度接口文档与测试用例
+- `module-learningresource/`
+  - 五角色资源生成、RAG 引用、事实校验和教师审核发布接口文档与测试用例
 
 维护约定：
 

@@ -20,6 +20,7 @@ import org.springframework.web.client.RestClientResponseException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,11 +70,47 @@ public class OpenAiCompatibleAgentModelClient {
         }
     }
 
+    public AgentModelResponse generateStreamingReply(AgentModelRequest request, Consumer<String> contentListener) {
+        SpringAiOpenAiChatClientFactory.ResolvedAgentModelConfig config = resolveConfig(request.modelConfigJson());
+        StringBuilder content = new StringBuilder();
+        try {
+            OpenAiChatClient chatClient = chatClientFactory.create(config);
+            chatClient.stream(buildPrompt(request)).toStream().forEach(response -> {
+                String chunk = responseText(response);
+                if (!chunk.isEmpty()) {
+                    content.append(chunk);
+                    contentListener.accept(content.toString());
+                }
+            });
+            if (!StringUtils.hasText(content)) {
+                throw new AgentModelException("INVALID_RESPONSE", "模型服务返回内容为空");
+            }
+            return new AgentModelResponse(content.toString().trim());
+        } catch (RuntimeException exception) {
+            if (exception instanceof AgentModelException modelException) throw modelException;
+            if (exception instanceof NonTransientAiException modelException) {
+                throw mapSpringAiStatusException(modelException);
+            }
+            if (exception instanceof TransientAiException transientException) {
+                throw new AgentModelException("PROVIDER_ERROR", "模型服务调用失败", transientException);
+            }
+            if (exception instanceof RestClientResponseException responseException) {
+                throw mapResponseException(responseException);
+            }
+            if (exception instanceof RestClientException restException
+                && restException.contains(java.net.http.HttpTimeoutException.class)) {
+                throw new AgentModelException("TIMEOUT", "模型服务调用超时", restException);
+            }
+            throw new AgentModelException("PROVIDER_ERROR", "模型服务调用失败", exception);
+        }
+    }
+
     private SpringAiOpenAiChatClientFactory.ResolvedAgentModelConfig resolveConfig(String modelConfigJson) {
-        if (!properties.isEnabled()) {
+        JsonNode node = readConfig(modelConfigJson);
+        boolean explicitConnection = hasText(node, "baseUrl") && hasText(node, "apiKey") && hasText(node, "model");
+        if (!properties.isEnabled() && !explicitConnection) {
             throw new AgentModelException("CONFIG_MISSING", "AI模型服务未启用");
         }
-        JsonNode node = readConfig(modelConfigJson);
         String baseUrl = normalizeBaseUrl(stringValue(node, "baseUrl", properties.getBaseUrl()));
         String apiKey = stringValue(node, "apiKey", properties.getApiKey());
         String model = stringValue(node, "model", properties.getModel());
@@ -93,6 +130,11 @@ public class OpenAiCompatibleAgentModelClient {
         );
     }
 
+    private boolean hasText(JsonNode node, String fieldName) {
+        JsonNode value = node.get(fieldName);
+        return value != null && !value.isNull() && StringUtils.hasText(value.asText());
+    }
+
     private Prompt buildPrompt(AgentModelRequest request) {
         List<Message> messages = new ArrayList<>();
         if (StringUtils.hasText(request.systemPrompt())) {
@@ -103,14 +145,19 @@ public class OpenAiCompatibleAgentModelClient {
     }
 
     private AgentModelResponse parseResponse(ChatResponse response) {
-        String text = response == null || response.getResult() == null
-            || response.getResult().getOutput() == null
-            ? ""
-            : response.getResult().getOutput().getContent();
+        String text = responseText(response);
         if (!StringUtils.hasText(text)) {
             throw new AgentModelException("INVALID_RESPONSE", "模型服务返回内容为空");
         }
         return new AgentModelResponse(text.trim());
+    }
+
+    private String responseText(ChatResponse response) {
+        return response == null || response.getResult() == null
+            || response.getResult().getOutput() == null
+            || response.getResult().getOutput().getContent() == null
+            ? ""
+            : response.getResult().getOutput().getContent();
     }
 
     private AgentModelException mapSpringAiStatusException(NonTransientAiException e) {

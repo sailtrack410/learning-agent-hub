@@ -90,13 +90,13 @@ watch(() => props.image, () => {
 }
 
 .ui-avatar.primary {
-  background: #e8f3ff;
-  color: #1677ff;
+  background: var(--primary-100);
+  color: var(--primary-600);
 }
 
 .ui-avatar.success {
-  background: #e8f8f0;
-  color: #1fad66;
+  background: var(--success-100);
+  color: var(--success-600);
 }
 
 .ui-avatar.warning {
@@ -110,7 +110,7 @@ watch(() => props.image, () => {
 }
 
 .ui-avatar.neutral {
-  background: #e6eaf0;
+  background: var(--surface-panel-strong);
   color: var(--text-secondary);
 }
 

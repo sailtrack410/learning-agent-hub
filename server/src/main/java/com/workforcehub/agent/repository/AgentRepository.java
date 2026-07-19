@@ -1409,6 +1409,17 @@ public class AgentRepository {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    public LlmModelRow getDefaultActiveTextModel() {
+        List<LlmModelRow> list = jdbcTemplate.query(llmModelSelectSql() + """
+             WHERE m.model_type = 'TEXT' AND m.default_flag = 1
+               AND m.status = 'ACTIVE' AND m.is_deleted = 0
+               AND (p.id IS NULL OR p.enabled = 1)
+             ORDER BY m.updated_at DESC, m.id DESC
+             LIMIT 1
+            """, this::mapLlmModel);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
     public List<AiProviderRow> listAiProviders() {
         return jdbcTemplate.query("""
             SELECT id, provider_type, display_name, base_url, api_key, enabled,

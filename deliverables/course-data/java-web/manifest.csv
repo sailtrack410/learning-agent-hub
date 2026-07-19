@@ -1,0 +1,8 @@
+course_code,chapter_no,chapter_name,knowledge_point_codes,resource_type,file_path,source
+JAVA_WEB,1,Servlet 与 Web 基础,HTTP|SERVLET,LECTURE_EXERCISE_CODE,chapters/01-servlet-http.md,MDN HTTP Guide|Jakarta Servlet Specification
+JAVA_WEB,2,Spring Boot 快速开发,SPRING_IOC|SPRING_BOOT,LECTURE_EXERCISE_CODE,chapters/02-spring-boot.md,Spring Framework Reference|Spring Boot Reference
+JAVA_WEB,3,REST API 设计,REST|VALIDATION,LECTURE_EXERCISE_CODE,chapters/03-rest-api.md,Spring Framework Reference|MDN HTTP Guide
+JAVA_WEB,4,MyBatis 数据访问,MYBATIS|TRANSACTION,LECTURE_EXERCISE_CODE,chapters/04-mybatis-transaction.md,MyBatis 3 Documentation|Spring Framework Reference
+JAVA_WEB,5,认证与权限,AUTHN|AUTHZ,LECTURE_EXERCISE_CODE,chapters/05-auth-security.md,Spring Security Reference
+JAVA_WEB,6,自动化测试,UNIT_TEST|INTEGRATION_TEST,LECTURE_EXERCISE_CODE,chapters/06-testing.md,JUnit 5 User Guide|Spring Boot Reference
+JAVA_WEB,7,构建与部署,BUILD|DEPLOY,LECTURE_EXERCISE_CODE,chapters/07-build-deploy.md,Maven Guide|Spring Boot Reference

@@ -1,0 +1,47 @@
+[
+  {
+    "profileCode": "BASIC",
+    "profileName": "基础型学生",
+    "description": "刚接触 Java Web，需要从 HTTP、Servlet 和分层结构建立完整基础。",
+    "dimensions": [
+      { "code": "KNOWLEDGE_BASE", "conclusion": "掌握 Java 基础语法，但对 HTTP 和 Servlet 生命周期不熟悉", "confidence": 0.92 },
+      { "code": "LEARNING_GOAL", "conclusion": "完成一个可运行的课程管理小项目", "confidence": 0.88 },
+      { "code": "MASTERY", "conclusion": "HTTP 35%，Servlet 30%，Spring Boot 20%", "confidence": 0.9 },
+      { "code": "ERROR_PATTERN", "conclusion": "容易混淆请求方法、状态码和容器生命周期", "confidence": 0.86 },
+      { "code": "COGNITIVE_STYLE", "conclusion": "偏好先看流程图，再跟随示例逐步实现", "confidence": 0.8 },
+      { "code": "RESOURCE_PREFERENCE", "conclusion": "偏好短讲解、图示和可复制的最小代码", "confidence": 0.84 },
+      { "code": "LEARNING_PACE", "conclusion": "每天 30 分钟，适合小步学习和即时测验", "confidence": 0.82 },
+      { "code": "PRACTICAL_ABILITY", "conclusion": "能运行示例，但独立定位错误能力较弱", "confidence": 0.87 }
+    ]
+  },
+  {
+    "profileCode": "INTERMEDIATE",
+    "profileName": "中等型学生",
+    "description": "能够独立完成基础接口，主要薄弱点是事务、权限和测试边界。",
+    "dimensions": [
+      { "code": "KNOWLEDGE_BASE", "conclusion": "熟悉 Spring Boot CRUD 和 MyBatis 基础映射", "confidence": 0.94 },
+      { "code": "LEARNING_GOAL", "conclusion": "掌握可测试的分层设计、事务和接口安全", "confidence": 0.91 },
+      { "code": "MASTERY", "conclusion": "REST 75%，MyBatis 65%，事务 50%，权限 45%", "confidence": 0.9 },
+      { "code": "ERROR_PATTERN", "conclusion": "容易遗漏横向越权、幂等约束和异常回滚", "confidence": 0.89 },
+      { "code": "COGNITIVE_STYLE", "conclusion": "偏好通过反例和代码审查理解规则", "confidence": 0.85 },
+      { "code": "RESOURCE_PREFERENCE", "conclusion": "偏好完整案例、测试代码和错误对照表", "confidence": 0.88 },
+      { "code": "LEARNING_PACE", "conclusion": "每次 45 至 60 分钟，可连续完成一个功能闭环", "confidence": 0.84 },
+      { "code": "PRACTICAL_ABILITY", "conclusion": "能独立调试普通接口，需要加强并发与安全验证", "confidence": 0.9 }
+    ]
+  },
+  {
+    "profileCode": "ADVANCED",
+    "profileName": "进阶型学生",
+    "description": "具备完整项目经验，重点提升架构权衡、性能、安全和交付能力。",
+    "dimensions": [
+      { "code": "KNOWLEDGE_BASE", "conclusion": "熟悉 Spring Boot、MyBatis、Spring Security 和自动化测试", "confidence": 0.96 },
+      { "code": "LEARNING_GOAL", "conclusion": "形成可上线、可观测、可回滚的工程交付能力", "confidence": 0.94 },
+      { "code": "MASTERY", "conclusion": "核心开发知识 85%，并发与部署治理 70%", "confidence": 0.92 },
+      { "code": "ERROR_PATTERN", "conclusion": "容易过度抽象，或低估真实数据与多实例并发边界", "confidence": 0.86 },
+      { "code": "COGNITIVE_STYLE", "conclusion": "偏好架构推演、性能数据和故障复盘", "confidence": 0.9 },
+      { "code": "RESOURCE_PREFERENCE", "conclusion": "偏好规范原文、源码分析和综合实战", "confidence": 0.91 },
+      { "code": "LEARNING_PACE", "conclusion": "每次 90 分钟，适合完成跨模块综合任务", "confidence": 0.88 },
+      { "code": "PRACTICAL_ABILITY", "conclusion": "能独立交付项目，需要强化容量、安全和部署演练", "confidence": 0.93 }
+    ]
+  }
+]

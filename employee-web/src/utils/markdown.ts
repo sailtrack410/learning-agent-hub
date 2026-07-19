@@ -44,7 +44,19 @@ export function renderMarkdownText(value?: string | null) {
     listType = type;
   }
 
-  for (const line of lines) {
+  function tableCells(line: string) {
+    const normalized = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+    return normalized.split('|').map((cell) => cell.trim());
+  }
+
+  function isTableSeparator(line?: string) {
+    if (!line) return false;
+    const cells = tableCells(line);
+    return cells.length > 1 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
     const trimmed = line.trim();
     if (trimmed.startsWith('```')) {
       if (inCode) {
@@ -65,6 +77,28 @@ export function renderMarkdownText(value?: string | null) {
     if (!trimmed) {
       flushParagraph();
       flushList();
+      continue;
+    }
+    if (trimmed.includes('|') && isTableSeparator(lines[index + 1])) {
+      flushParagraph();
+      flushList();
+      const headers = tableCells(line);
+      const rows: string[][] = [];
+      index += 2;
+      while (index < lines.length && lines[index].trim().includes('|')) {
+        rows.push(tableCells(lines[index]));
+        index += 1;
+      }
+      index -= 1;
+      html.push('<table><thead><tr>');
+      headers.forEach((cell) => html.push(`<th>${renderInlineMarkdown(cell)}</th>`));
+      html.push('</tr></thead><tbody>');
+      rows.forEach((row) => {
+        html.push('<tr>');
+        headers.forEach((_, cellIndex) => html.push(`<td>${renderInlineMarkdown(row[cellIndex] ?? '')}</td>`));
+        html.push('</tr>');
+      });
+      html.push('</tbody></table>');
       continue;
     }
     const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);

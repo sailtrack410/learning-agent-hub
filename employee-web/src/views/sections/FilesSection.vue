@@ -1,20 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import {
-  ChevronLeft,
-  Copy,
-  Download,
-  FolderPlus,
-  Home,
-  MoreHorizontal,
-  MoveRight,
-  RotateCcw,
-  Search,
-  Send,
-  Star,
-  Trash2,
-  X,
-} from 'lucide-vue-next';
 import { employeeApi, type EmployeeFileFolderResponse, type EmployeeFileResponse, type EntityId } from '@/api';
 import { useFilesSectionContext } from '../employee-shell-context';
 import { isFileTrashed } from '@/utils/file-record';
@@ -22,14 +7,18 @@ import { fileSizeLabel, fileTypeLabelFromName } from '@/utils/file-format';
 import { buildStorageOverview, parseStorageSizeBytes } from '@/utils/cloud-storage-summary';
 import { formatDateTime } from '@/utils/employee-format';
 import type { PersonalFileRecord } from '@/stores/shell';
-import cloudFolderImage from '@/assets/cloud-folder.png';
-import archiveFileIcon from '@/assets/file-icons/archive.png';
-import excelFileIcon from '@/assets/file-icons/excel.png';
-import fileIcon from '@/assets/file-icons/file.png';
-import folderFileIcon from '@/assets/file-icons/folder.png';
-import pdfFileIcon from '@/assets/file-icons/pdf.png';
-import pptFileIcon from '@/assets/file-icons/ppt.png';
-import wordFileIcon from '@/assets/file-icons/word.png';
+import cloudHeroImage from '@/assets/education/generated/cloud-hero.webp';
+import cloudRecentImage from '@/assets/education/generated/cloud-recent.webp';
+import cloudUploadImage from '@/assets/education/generated/cloud-upload.webp';
+import cloudFavoriteImage from '@/assets/education/generated/cloud-favorite.webp';
+import cloudSharedImage from '@/assets/education/generated/cloud-shared.webp';
+import archiveFileIcon from '@/assets/education/generated/cloud-file-archive.webp';
+import excelFileIcon from '@/assets/education/generated/cloud-file-excel.webp';
+import fileIcon from '@/assets/education/generated/cloud-file-generic.webp';
+import folderFileIcon from '@/assets/education/generated/cloud-file-folder.webp';
+import pdfFileIcon from '@/assets/education/generated/cloud-file-pdf.webp';
+import pptFileIcon from '@/assets/education/generated/cloud-file-ppt.webp';
+import wordFileIcon from '@/assets/education/generated/cloud-file-word.webp';
 import AppButton from '../../components/ui/AppButton.vue';
 import AppDialog from '../../components/ui/AppDialog.vue';
 import AppEmptyState from '../../components/ui/AppEmptyState.vue';
@@ -93,6 +82,12 @@ const fileQuickCards = computed(() => [
   { key: 'favorites' as const, title: '收藏夹', count: favoriteFileCount.value },
   { key: 'shared' as const, title: '共享文件', count: 0 },
 ]);
+const fileQuickImages = {
+  recentAccess: cloudRecentImage,
+  recentUpload: cloudUploadImage,
+  favorites: cloudFavoriteImage,
+  shared: cloudSharedImage,
+} as const;
 const quickViewTitles: Record<FileQuickView, string> = {
   all: '全部文件',
   recentAccess: '最近访问',
@@ -421,19 +416,25 @@ onMounted(() => {
 
 <template>
 <div class="workspace generic-workspace">
-  <header class="workspace-head">
-    <div class="workspace-title-group">
+  <header class="cloud-hero" :style="{ '--cloud-hero-image': `url(${cloudHeroImage})` }">
+    <div class="cloud-hero-copy">
       <button class="mobile-back" type="button" aria-label="返回列表" @click="backToList">
-        <ChevronLeft :size="22" />
+        <span aria-hidden="true">‹</span>
       </button>
-      <div class="workspace-head-text">
-        <h2 class="workspace-title">{{ activeFile.title }}</h2>
+      <span class="cloud-hero-eyebrow">个人数字资料库</span>
+      <h1>{{ activeFile.title }}</h1>
+      <p>集中整理课程文件、作业附件与个人学习材料。</p>
+      <div class="cloud-hero-actions">
+        <AppButton variant="primary" size="sm" :disabled="fileUploading" @click="uploadToCurrentFolder">
+          {{ fileUploading ? '上传中' : currentMeta.primaryAction?.label }}
+        </AppButton>
+        <span>已使用 {{ storageUsagePercentLabel }}%</span>
       </div>
     </div>
-    <div class="head-actions">
-      <AppButton variant="primary" size="sm" :disabled="fileUploading" @click="uploadToCurrentFolder">
-        {{ fileUploading ? '上传中' : currentMeta.primaryAction?.label }}
-      </AppButton>
+    <div class="cloud-capacity-badge" aria-label="存储用量">
+      <small>当前用量</small>
+      <strong>{{ storageUsedLabel }}</strong>
+      <span>/ {{ storageTotalLabel }}</span>
     </div>
   </header>
 
@@ -449,7 +450,9 @@ onMounted(() => {
           :aria-pressed="fileTab === 'all' && quickView === card.key"
           @click="selectQuickView(card.key)"
         >
-          <img :src="cloudFolderImage" alt="" aria-hidden="true" />
+          <span class="cloud-quick-icon">
+            <img :src="fileQuickImages[card.key]" alt="" />
+          </span>
           <div>
             <h3>{{ card.title }}</h3>
             <p>{{ card.count }} 个文件</p>
@@ -458,7 +461,7 @@ onMounted(() => {
       </div>
 
       <article class="storage-overview-card">
-        <header>存储概览</header>
+        <header><span>存储概览</span><em>个人空间</em></header>
         <div class="storage-overview-body">
           <div class="storage-usage-line">
             <strong>{{ storageUsedLabel }}</strong>
@@ -485,8 +488,12 @@ onMounted(() => {
       </article>
     </section>
 
-    <section class="detail-card">
+    <section class="detail-card cloud-browser-card">
       <div class="title-line file-tabs">
+        <div class="cloud-browser-title">
+          <small>文件管理</small>
+          <strong>{{ quickViewTitles[quickView] }}</strong>
+        </div>
         <div class="settings-density-row">
           <button type="button" :class="{ active: fileTab === 'all' && quickView === 'all' }" @click="selectAllFiles">
             全部文件
@@ -502,7 +509,6 @@ onMounted(() => {
       <template v-if="fileTab === 'all'">
         <div class="file-browser-toolbar" :class="{ compact: quickView !== 'all' }">
           <label class="file-search-field">
-            <Search :size="16" />
             <input v-model="fileKeyword" type="search" placeholder="搜索文件或文件夹" />
           </label>
           <select v-model="fileTypeFilter" class="ui-inline-input file-type-select">
@@ -517,7 +523,6 @@ onMounted(() => {
           <label v-if="quickView === 'all'" class="file-folder-create">
             <input v-model="folderNameDraft" class="ui-inline-input" placeholder="新建文件夹" @input="folderActionError = ''" @keydown.enter.prevent="createFolder" />
             <AppButton variant="secondary" size="sm" :disabled="!folderNameDraft.trim()" @click="createFolder">
-              <FolderPlus :size="15" />
               新建
             </AppButton>
           </label>
@@ -526,7 +531,6 @@ onMounted(() => {
 
         <div v-if="quickView === 'all'" class="file-breadcrumb">
           <button type="button" :class="{ active: currentFolderId === null }" @click="openRootFolder">
-            <Home :size="15" />
             根目录
           </button>
           <button
@@ -589,33 +593,24 @@ onMounted(() => {
             </div>
             <div class="file-actions">
               <button type="button" :disabled="!file.attachmentRefId || im.messageSending" @click="sendSelectedFileToConversation(file)">
-                <Send :size="15" />
                 发送
               </button>
               <button type="button" :disabled="!file.attachmentRefId" @click="downloadBrowserFile(file)">
-                <Download :size="15" />
                 下载
               </button>
               <details class="file-more-menu">
-                <summary>
-                  <MoreHorizontal :size="15" />
-                  更多
-                </summary>
+                <summary>更多</summary>
                 <div class="file-more-panel">
                   <button type="button" :disabled="!file.attachmentRefId" @click="toggleFavorite(file)">
-                    <Star :size="15" />
                     {{ isFavorite(file) ? '已收藏' : '收藏' }}
                   </button>
                   <button type="button" :disabled="!file.attachmentRefId" @click="openPlacement(file, 'move')">
-                    <MoveRight :size="15" />
                     移动
                   </button>
                   <button type="button" :disabled="!file.attachmentRefId" @click="openPlacement(file, 'copy')">
-                    <Copy :size="15" />
                     复制
                   </button>
                   <button type="button" :disabled="!file.attachmentRefId" @click="trashBrowserFile(file)">
-                    <Trash2 :size="15" />
                     删除
                   </button>
                 </div>
@@ -644,11 +639,9 @@ onMounted(() => {
             </div>
             <div class="file-actions">
               <button type="button" :disabled="!file.attachmentRefId" @click="restorePersonalFile(file)">
-                <RotateCcw :size="15" />
                 恢复
               </button>
               <button type="button" :disabled="!file.attachmentRefId" @click="purgePersonalFile(file)">
-                <Trash2 :size="15" />
                 彻底删除
               </button>
             </div>
@@ -667,7 +660,7 @@ onMounted(() => {
         <p>{{ placementTarget.file.name }}</p>
       </div>
       <button class="field-icon-button" type="button" aria-label="关闭" @click="closePlacement">
-        <X :size="15" />
+        <span aria-hidden="true">×</span>
       </button>
     </header>
     <label class="security-field">
@@ -691,3 +684,231 @@ onMounted(() => {
   </section>
 </AppDialog>
 </template>
+
+<style scoped>
+.cloud-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 20rem;
+  overflow: hidden;
+  padding: clamp(var(--space-24), 3vw, var(--space-40)) var(--layout-content-pad);
+  border-bottom: 1px solid var(--border-accent);
+  background-color: var(--surface-accent);
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--surface-panel) 98%, transparent) 0%, color-mix(in srgb, var(--surface-panel) 90%, transparent) 38%, transparent 64%),
+    var(--cloud-hero-image);
+  background-position: center;
+  background-size: cover;
+  box-shadow: var(--shadow-md);
+}
+
+.cloud-hero-copy {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: var(--space-9);
+  width: min(51%, 38rem);
+  min-height: 100%;
+}
+
+.cloud-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.85rem;
+  padding: 0 var(--space-10);
+  border: 1px solid color-mix(in srgb, var(--border-accent) 72%, transparent);
+  border-radius: 999px;
+  background: var(--surface-glass);
+  color: var(--text-accent);
+  font-size: var(--text-caption);
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.cloud-hero h1 {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: clamp(var(--text-title), 3vw, var(--text-headline));
+  line-height: 1.1;
+}
+
+.cloud-hero p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.cloud-hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-10);
+  margin-top: var(--space-4);
+}
+
+.cloud-hero-actions > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-height: 2.25rem;
+  padding: 0 var(--space-10);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: var(--surface-glass);
+  color: var(--text-secondary);
+  font-size: var(--text-caption-md);
+}
+
+.cloud-capacity-badge {
+  position: absolute;
+  z-index: 3;
+  right: clamp(var(--space-20), 4vw, var(--space-40));
+  bottom: var(--space-20);
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  column-gap: var(--space-5);
+  padding: var(--space-12) var(--space-16);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-16);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(.7rem);
+}
+
+.cloud-capacity-badge small {
+  grid-column: 1 / -1;
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.cloud-capacity-badge strong {
+  color: var(--text-accent);
+  font-family: var(--font-family-display);
+  font-size: var(--text-subtitle-md);
+}
+
+.cloud-capacity-badge span {
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
+}
+
+.cloud-content-stack {
+  gap: var(--space-18);
+  overflow: auto;
+  background-color: var(--surface-canvas);
+  background-image: var(--canvas-backdrop);
+}
+
+.cloud-quick-grid {
+  gap: var(--space-10);
+}
+
+.cloud-folder-card {
+  position: relative;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-6);
+  overflow: hidden;
+  padding: var(--space-12);
+  border-radius: var(--radius-16);
+  background: linear-gradient(145deg, var(--surface-panel), color-mix(in srgb, var(--surface-accent) 48%, var(--surface-panel)));
+  text-align: center;
+  transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.cloud-folder-card:hover,
+.cloud-folder-card:focus-visible,
+.cloud-folder-card.active {
+  transform: translateY(-.18rem);
+  box-shadow: var(--shadow-md) !important;
+}
+
+.cloud-quick-icon {
+  display: grid;
+  width: 4.75rem;
+  height: 4.75rem;
+  place-items: center;
+}
+
+.cloud-quick-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cloud-folder-card h3 {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-caption-md);
+}
+
+.cloud-folder-card p {
+  margin-top: var(--space-4);
+  font-family: var(--font-family-display);
+  font-size: var(--text-subtitle-md);
+}
+
+.storage-overview-card {
+  border-radius: var(--radius-18);
+  background: linear-gradient(145deg, var(--surface-panel), color-mix(in srgb, var(--surface-accent) 34%, var(--surface-panel)));
+  box-shadow: var(--shadow-md);
+}
+
+.storage-overview-card header {
+  justify-content: space-between;
+}
+
+.storage-overview-card header em {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-5);
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
+  font-style: normal;
+}
+
+.cloud-browser-card {
+  border-radius: var(--radius-20);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-md);
+}
+
+.cloud-browser-title {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.cloud-browser-title small {
+  color: var(--text-accent);
+  font-size: var(--text-caption);
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.cloud-browser-title strong {
+  font-family: var(--font-family-display);
+  font-size: var(--text-subtitle-md);
+}
+
+@media (max-width: 980px) {
+  .cloud-hero {
+    min-height: 18rem;
+    background-position: 64% center;
+  }
+
+  .cloud-hero-copy {
+    width: min(65%, 36rem);
+  }
+}
+
+:global([data-theme='dark']) .cloud-hero {
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--surface-panel) 98%, transparent) 0%, color-mix(in srgb, var(--surface-panel) 92%, transparent) 42%, color-mix(in srgb, var(--surface-panel) 24%, transparent) 72%),
+    var(--cloud-hero-image);
+}
+</style>

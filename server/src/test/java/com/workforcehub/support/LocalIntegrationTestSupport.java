@@ -191,6 +191,36 @@ public abstract class LocalIntegrationTestSupport {
             deleteIfExists(jdbcTemplate, "kb_document");
             deleteIfExists(jdbcTemplate, "kb_space_acl");
             deleteIfExists(jdbcTemplate, "kb_space");
+            deleteIfExists(jdbcTemplate, "edu_generated_resource_citation");
+            deleteIfExists(jdbcTemplate, "edu_resource_learning_record");
+            deleteIfExists(jdbcTemplate, "edu_resource_feedback");
+            deleteIfExists(jdbcTemplate, "edu_generated_resource_push");
+            deleteIfExists(jdbcTemplate, "edu_generated_resource");
+            deleteIfExists(jdbcTemplate, "edu_resource_generation_step");
+            deleteIfExists(jdbcTemplate, "edu_resource_generation_task");
+            resetContentSafetyPolicy(jdbcTemplate);
+            deleteIfExists(jdbcTemplate, "edu_learning_recommendation");
+            deleteIfExists(jdbcTemplate, "edu_learning_path_node");
+            deleteIfExists(jdbcTemplate, "edu_learning_path");
+            deleteIfExists(jdbcTemplate, "edu_learning_progress");
+            deleteIfExists(jdbcTemplate, "edu_assessment_answer");
+            deleteIfExists(jdbcTemplate, "edu_assessment_attempt");
+            deleteIfExists(jdbcTemplate, "edu_student_mastery");
+            deleteIfExists(jdbcTemplate, "edu_assessment_question");
+            deleteIfExists(jdbcTemplate, "edu_assessment");
+            deleteIfExists(jdbcTemplate, "edu_student_profile_message");
+            deleteIfExists(jdbcTemplate, "edu_student_profile_evidence");
+            deleteIfExists(jdbcTemplate, "edu_student_profile_dimension");
+            deleteIfExists(jdbcTemplate, "edu_student_profile_version");
+            deleteIfExists(jdbcTemplate, "edu_student_profile");
+            deleteIfExists(jdbcTemplate, "edu_course_enrollment");
+            deleteIfExists(jdbcTemplate, "edu_knowledge_dependency");
+            deleteIfExists(jdbcTemplate, "edu_knowledge_point");
+            deleteIfExists(jdbcTemplate, "edu_course_chapter");
+            deleteIfExists(jdbcTemplate, "edu_course_invitation");
+            deleteIfExists(jdbcTemplate, "edu_course_teacher");
+            deleteIfExists(jdbcTemplate, "edu_course");
+            deleteIfExists(jdbcTemplate, "edu_user_role");
             jdbcTemplate.execute("DELETE FROM auth_user_account");
             jdbcTemplate.execute("DELETE FROM emp_user_preference");
             jdbcTemplate.execute("DELETE FROM org_department_leader");
@@ -216,6 +246,28 @@ public abstract class LocalIntegrationTestSupport {
         if (count != null && count > 0) {
             jdbcTemplate.execute("DELETE FROM " + tableName);
         }
+    }
+
+    private void resetContentSafetyPolicy(JdbcTemplate jdbcTemplate) {
+        Integer count = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'edu_content_safety_policy'
+            """, Integer.class);
+        if (count == null || count == 0) return;
+        jdbcTemplate.update("""
+            UPDATE edu_content_safety_policy
+            SET prompt_injection_detection_enabled = 1,
+                review_confidence_threshold = 0.7500,
+                blocked_markers_json = JSON_ARRAY(
+                    'ignore previous', 'ignore all previous', 'system prompt', 'developer message', 'tool call',
+                    '忽略之前', '忽略以上', '系统提示词', '开发者消息', '调用工具', '越权调用',
+                    'drop table', 'truncate table', '删除数据库'
+                ),
+                version_no = 1,
+                updated_by = NULL
+            WHERE id = 1
+            """);
     }
 
     private static Resource resolveSeedScript() {

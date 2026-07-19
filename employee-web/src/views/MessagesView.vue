@@ -2,6 +2,7 @@
 import {
   ArrowUpRight,
   BarChart3,
+  BookOpenText,
   CalendarDays,
   Check,
   ChevronLeft,
@@ -13,10 +14,10 @@ import {
   FileText,
   GitBranch,
   LayoutGrid,
+  LogOut,
   MessageCircle,
   MoonStar,
   PanelLeftClose,
-  PanelLeftOpen,
   Pencil,
   Pin,
   PinOff,
@@ -28,6 +29,7 @@ import {
   Sparkles,
   SunMedium,
   UserRound,
+  ScanFace,
   UsersRound,
   X,
 } from 'lucide-vue-next';
@@ -84,6 +86,7 @@ import ShellNavButton from '../components/shell/ShellNavButton.vue';
 import ContactsCategoryNav from '../components/ContactsCategoryNav.vue';
 import { provideEmployeeShellContexts } from './employee-shell-context';
 import type { EmployeeShellContexts } from './employee-shell-context';
+import learningPathHero from '@/assets/learning-path-hero-3d.webp';
 
 const shell = useShellStore();
 const im = useImStore();
@@ -104,9 +107,12 @@ const fileSendTargetError = ref('');
 let toastTimer: number | undefined;
 
 const sectionIcons: Record<SectionId, typeof MessageCircle> = {
+  courses: BookOpenText,
+  profile: ScanFace,
   messages: MessageCircle,
   todos: Clock3,
-  files: FileText,
+  resources: FileText,
+  files: CloudUpload,
   workbench: LayoutGrid,
   processes: GitBranch,
   contacts: UsersRound,
@@ -242,11 +248,29 @@ function conversationNoticeLabel(conversation: ConversationRecord) {
   ))) return '[有人回复我]';
   return '';
 }
+
+function conversationPrimaryTitle(conversation: ConversationRecord) {
+  if (!conversation.conversationKey?.startsWith('COURSE_CLASS:')) return conversation.title;
+  return conversation.title.split(' · ', 2)[0] || conversation.title;
+}
+
+function conversationClassLabel(conversation: ConversationRecord) {
+  if (!conversation.conversationKey?.startsWith('COURSE_CLASS:')) return '';
+  return conversation.title.split(' · ', 2)[1] || '';
+}
 const filteredFiles = computed(() => shell.filteredFiles);
 const filteredWorkbench = computed(() => shell.filteredWorkbench);
 const filteredContacts = computed(() => shell.filteredContacts);
 const filteredProfile = computed(() => shell.filteredProfile);
-const mobileNavItems = computed(() => primaryNavItems);
+const roleNavItems = computed(() => primaryNavItems.map((item) => {
+  if (session.educationRole !== 'TEACHER') return item;
+  if (item.id === 'profile') return null;
+  if (item.id === 'courses') return { ...item, label: '课程管理' };
+  if (item.id === 'agents') return { ...item, label: '教学助手' };
+  if (item.id === 'resources') return { ...item, label: '教学资源' };
+  return item;
+}).filter((item): item is (typeof primaryNavItems)[number] => item !== null));
+const mobileNavItems = computed(() => roleNavItems.value);
 const showFilterBar = computed(() => filterOptions.value.length > 1);
 const showFilterArrows = computed(() => filtersOverflow.value);
 const workbenchLaunchers = computed(() => filteredWorkbench.value);
@@ -307,8 +331,11 @@ const currentListError = computed(() => {
 });
 
 const sectionRouteNames: Partial<Record<SectionId, string>> = {
+  courses: 'employee-courses',
+  profile: 'employee-profile',
   messages: 'employee-messages',
   todos: 'employee-todos',
+  resources: 'employee-resources',
   files: 'employee-files',
   workbench: 'employee-workbench',
   contacts: 'employee-contacts',
@@ -411,6 +438,21 @@ const {
 });
 const showAuthModeHead = computed(() => loginRequiresEmailBinding.value || loginRequiresEmailCode.value || Boolean(authModeSubtitle.value));
 
+async function submitLoginForm(event: Event) {
+  if (event.currentTarget instanceof HTMLFormElement) {
+    const values = new FormData(event.currentTarget);
+    loginName.value = String(values.get('loginName') ?? '').trim();
+    password.value = String(values.get('password') ?? '');
+    loginEmailCode.value = String(values.get('emailCode') ?? '').trim();
+    loginBindEmail.value = String(values.get('bindEmail') ?? '').trim();
+  }
+  if (!loginName.value || !password.value) {
+    session.error = '登录名和密码不能为空';
+    return;
+  }
+  await submitLogin();
+}
+
 function runAction(action?: SectionAction) {
   if (!action) return;
   if (action.action === 'upload-personal-file') {
@@ -496,6 +538,12 @@ function openProfileSettings() {
   selectSettingsItem('profile');
 }
 
+async function logout() {
+  closeImSocket();
+  await session.logout();
+  await router.replace({ name: 'employee-courses' });
+}
+
 async function loadAuthenticatedWorkspace() {
   if (!session.isAuthenticated) return;
   await Promise.all([
@@ -521,7 +569,7 @@ async function loadAuthenticatedWorkspace() {
       }
     }),
   ]);
-  await im.loadVisibleConversationDetails(undefined, undefined, session.user?.userId);
+  await im.loadVisibleConversationDetails();
   shell.mergeBackendConversations(im.conversations);
   shell.setColleagues(session.colleagues);
   shell.syncSessionProfile(session.user, session.profile, session.manager, session.subordinates);
@@ -548,7 +596,7 @@ async function syncConversationMessages(id: string) {
   if (!session.isAuthenticated) return;
   await Promise.all([
     im.loadMessages(conversationId, session.user?.userId),
-    im.loadConversationDetail(conversationId, undefined, session.user?.userId).catch(() => undefined),
+    im.loadConversationDetail(conversationId).catch(() => undefined),
   ]);
   shell.mergeBackendConversations(im.conversations);
   shell.setColleagues(session.colleagues);
@@ -1036,17 +1084,25 @@ provideEmployeeShellContexts(employeeShellContexts);
   </main>
 
   <main v-else-if="!session.isAuthenticated" class="auth-shell" :data-theme="shell.theme">
-    <section class="auth-hero" aria-label="员工端登录">
+    <section class="auth-hero" aria-label="学习平台登录">
       <div class="auth-brand-row">
-        <AppAvatar label="企业" kind="org" tone="neutral" size="md" />
+        <AppAvatar label="学习平台" kind="org" tone="neutral" size="md" />
         <button class="theme-toggle auth-theme-toggle" type="button" @click="shell.toggleTheme()">
           <component :is="shell.theme === 'light' ? MoonStar : SunMedium" :size="16" />
           <span>{{ themeLabel }}</span>
         </button>
       </div>
       <div class="auth-hero-copy">
-        <h1>企业协同</h1>
+        <span class="auth-eyebrow"><Sparkles :size="16" />Learning Agent Hub</span>
+        <h1>让每一次学习，都沿着更适合你的路径前进</h1>
+        <p>学生获得动态画像、个性化路径与学习资源，教师在同一课程空间完成内容建设、学情分析和班级协作。</p>
+        <div class="auth-signal-grid" aria-label="平台核心能力">
+          <span><BookOpenText :size="20" /><strong>课程学习</strong><small>文章、附件与测验</small></span>
+          <span><GitBranch :size="20" /><strong>动态路径</strong><small>按掌握度持续调整</small></span>
+          <span><Sparkles :size="20" /><strong>智能协作</strong><small>生成、校验与推荐</small></span>
+        </div>
       </div>
+      <div class="auth-hero-visual" aria-hidden="true"><span></span><img :src="learningPathHero" alt="" /></div>
     </section>
 
     <section class="auth-card" :aria-label="authModeTitle">
@@ -1060,23 +1116,23 @@ provideEmployeeShellContexts(employeeShellContexts);
         <p v-if="authModeSubtitle">{{ authModeSubtitle }}</p>
       </div>
 
-      <form v-if="authMode === 'login'" class="auth-form" @submit.prevent="submitLogin">
+      <form v-if="authMode === 'login'" class="auth-form" @submit.prevent="submitLoginForm">
         <label class="auth-field">
           <span>登录名</span>
-          <AppInput v-model="loginName" autocomplete="username" placeholder="员工登录名" />
+          <AppInput v-model="loginName" name="loginName" autocomplete="username" placeholder="学生或教师登录名" />
         </label>
         <label class="auth-field">
           <span>密码</span>
-          <AppInput v-model="password" type="password" autocomplete="current-password" placeholder="密码" />
+          <AppInput v-model="password" name="password" type="password" autocomplete="current-password" placeholder="密码" />
         </label>
         <label v-if="loginRequiresEmailBinding" class="auth-field">
           <span>绑定邮箱</span>
-          <AppInput v-model="loginBindEmail" type="email" autocomplete="email" placeholder="邮箱地址" />
+          <AppInput v-model="loginBindEmail" name="bindEmail" type="email" autocomplete="email" placeholder="邮箱地址" />
         </label>
         <div v-if="loginRequiresEmailCode || loginRequiresEmailBinding" class="auth-code-row">
           <label class="auth-field">
             <span>邮箱验证码</span>
-            <AppInput v-model="loginEmailCode" autocomplete="one-time-code" placeholder="邮箱验证码" />
+            <AppInput v-model="loginEmailCode" name="emailCode" autocomplete="one-time-code" placeholder="邮箱验证码" />
           </label>
           <AppButton
             variant="secondary"
@@ -1089,8 +1145,8 @@ provideEmployeeShellContexts(employeeShellContexts);
         </div>
         <p v-if="session.error" class="auth-error">{{ session.error }}</p>
         <p v-if="authNotice" class="auth-notice">{{ authNotice }}</p>
-        <AppButton variant="primary" size="lg" block type="submit" :disabled="session.loading || !loginName.trim() || !password">
-          {{ session.loading ? '登录中' : (loginRequiresEmailCode || loginRequiresEmailBinding) ? '验证并进入' : '进入工作区' }}
+        <AppButton variant="primary" size="lg" block type="submit" :disabled="session.loading">
+          {{ session.loading ? '登录中' : (loginRequiresEmailCode || loginRequiresEmailBinding) ? '验证并进入' : '进入平台' }}
         </AppButton>
       </form>
 
@@ -1148,17 +1204,17 @@ provideEmployeeShellContexts(employeeShellContexts);
   >
     <input ref="personalFileInput" class="visually-hidden-input" type="file" @change="handlePersonalFileSelected" />
 
-    <aside class="side-rail" aria-label="员工端功能">
+    <aside class="side-rail" aria-label="学习平台功能">
       <div class="brand-block">
-        <AppAvatar label="企业" kind="org" tone="neutral" size="md" />
+        <AppAvatar label="学习平台" kind="org" tone="neutral" size="md" />
         <div class="brand-copy">
-          <strong>企业协同</strong>
+          <strong>智能学习平台</strong>
         </div>
       </div>
 
       <nav class="rail-nav" aria-label="主功能">
         <ShellNavButton
-          v-for="item in primaryNavItems"
+          v-for="item in roleNavItems"
           :key="item.id"
           :active="item.id === activeSection"
           @click="selectNav(item.id)"
@@ -1182,10 +1238,13 @@ provideEmployeeShellContexts(employeeShellContexts);
             <small>{{ session.positionName || session.departmentName }}</small>
           </span>
         </button>
+        <button class="logout-button" type="button" aria-label="退出登录" @click="logout">
+          <LogOut :size="18" />
+        </button>
       </div>
     </aside>
 
-    <section v-if="activeSection !== 'files' && activeSection !== 'agents'" class="list-pane" :class="{ 'mobile-visible': mobileStage === 'list' }">
+    <section v-if="activeSection !== 'resources' && activeSection !== 'files' && activeSection !== 'agents' && activeSection !== 'courses' && activeSection !== 'profile'" class="list-pane" :class="{ 'mobile-visible': mobileStage === 'list' }">
       <header class="pane-head">
         <div class="pane-title-row">
           <div class="pane-head-copy">
@@ -1289,7 +1348,7 @@ provideEmployeeShellContexts(employeeShellContexts);
                 <div class="message-row-main">
                   <div class="message-avatar-wrap">
                     <AppAvatar
-                      :label="item.title"
+                      :label="conversationPrimaryTitle(item)"
                       :image="item.avatarUrl"
                       :kind="item.kind === 'agent' ? 'agent' : 'user'"
                       :tone="toneOfConversation(item.tone)"
@@ -1304,7 +1363,7 @@ provideEmployeeShellContexts(employeeShellContexts);
                   </div>
                   <div class="message-copy">
                     <div class="message-title-line">
-                      <strong>{{ item.title }}</strong>
+                      <strong>{{ conversationPrimaryTitle(item) }}</strong>
                       <span v-if="item.kind === 'team'" class="conversation-kind-pill pill-team">群{{ item.memberCount ? ` · ${item.memberCount}` : '' }}</span>
                       <span v-else-if="item.kind === 'agent'" class="conversation-kind-pill pill-agent">AI</span>
                       <span v-else class="conversation-kind-pill pill-private">私聊</span>
@@ -1313,6 +1372,7 @@ provideEmployeeShellContexts(employeeShellContexts);
                         置顶
                       </span>
                     </div>
+                    <span v-if="conversationClassLabel(item)" class="conversation-class-label">{{ conversationClassLabel(item) }}</span>
                     <p>
                       <span v-if="conversationNoticeLabel(item)" class="conversation-notice-label">{{ conversationNoticeLabel(item) }}</span>
                       {{ item.subtitle }}
@@ -1440,9 +1500,9 @@ provideEmployeeShellContexts(employeeShellContexts);
       </div>
     </section>
 
-    <div v-if="activeSection !== 'files' && activeSection !== 'agents'" class="resize-handle" role="separator" aria-orientation="vertical" aria-label="调整列表宽度" @pointerdown.prevent="startResize" />
+    <div v-if="activeSection !== 'resources' && activeSection !== 'files' && activeSection !== 'agents' && activeSection !== 'courses' && activeSection !== 'profile'" class="resize-handle" role="separator" aria-orientation="vertical" aria-label="调整列表宽度" @pointerdown.prevent="startResize" />
 
-    <section class="main-pane" :class="{ 'mobile-visible': mobileStage === 'detail' || activeSection === 'files' || activeSection === 'agents' }">
+    <section class="main-pane" :class="{ 'mobile-visible': mobileStage === 'detail' || activeSection === 'resources' || activeSection === 'files' || activeSection === 'agents' || activeSection === 'courses' || activeSection === 'profile' }">
       <RouterView v-slot="{ Component }">
         <component :is="Component" />
       </RouterView>
@@ -1454,9 +1514,9 @@ provideEmployeeShellContexts(employeeShellContexts);
           <div>
             <h2>{{ activeSection === 'messages' ? activeConversation.title : currentMeta.title }}</h2>
           </div>
-          <AppButton variant="ghost" size="sm" :aria-label="detailVisible ? '关闭详情' : '打开详情'" @click="shell.toggleDetail()">
-            <component :is="detailVisible ? PanelLeftClose : PanelLeftOpen" :size="18" />
-          </AppButton>
+          <button class="field-icon-button" type="button" aria-label="关闭详情" @click.stop="closeDetail">
+            <PanelLeftClose :size="18" />
+          </button>
         </header>
 
         <template v-if="activeSection === 'messages' && hasActiveConversation">
@@ -1543,6 +1603,10 @@ provideEmployeeShellContexts(employeeShellContexts);
           </AppBadge>
         </span>
         <span>{{ item.label }}</span>
+      </button>
+      <button type="button" class="mobile-rail-button" @click="logout">
+        <span class="mobile-icon-wrap"><LogOut :size="18" /></span>
+        <span>退出</span>
       </button>
     </nav>
 

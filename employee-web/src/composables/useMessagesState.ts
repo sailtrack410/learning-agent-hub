@@ -97,6 +97,7 @@ export function useMessagesState({
   const activeConversation = computed(() => shell.activeConversation);
   const activeConversationTitle = computed(() => {
     const conversation = activeConversation.value;
+    if (conversation.kind === 'private') return conversation.title;
     return conversation.memberCount ? `${conversation.title}（${conversation.memberCount}）` : conversation.title;
   });
   const activeConversationCurrentStep = computed(() => (

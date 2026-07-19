@@ -3,6 +3,7 @@ package com.workforcehub.ragflow.repository;
 import com.workforcehub.common.exception.BizException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -236,7 +237,8 @@ public class RagflowRepository {
         return jdbcTemplate.query("""
             SELECT d.id, d.space_id, d.attachment_ref_id, d.source_file_object_id, d.title,
                    d.mime_type, d.file_size, d.content_hash, d.parser_type, d.ingest_status,
-                   d.latest_ingest_job_id, j.status AS ingest_job_status, j.vector_status,
+                   d.latest_ingest_job_id, j.status AS ingest_job_status, j.progress_percent,
+                   j.current_stage, j.vector_status,
                    j.chunk_count, j.error_message, d.created_at, d.updated_at
             FROM kb_document d
             LEFT JOIN kb_ingest_job j ON j.id = d.latest_ingest_job_id
@@ -250,7 +252,8 @@ public class RagflowRepository {
         List<RagflowDocumentRow> rows = jdbcTemplate.query("""
             SELECT d.id, d.space_id, d.attachment_ref_id, d.source_file_object_id, d.title,
                    d.mime_type, d.file_size, d.content_hash, d.parser_type, d.ingest_status,
-                   d.latest_ingest_job_id, j.status AS ingest_job_status, j.vector_status,
+                   d.latest_ingest_job_id, j.status AS ingest_job_status, j.progress_percent,
+                   j.current_stage, j.vector_status,
                    j.chunk_count, j.error_message, d.created_at, d.updated_at
             FROM kb_document d
             LEFT JOIN kb_ingest_job j ON j.id = d.latest_ingest_job_id
@@ -299,9 +302,9 @@ public class RagflowRepository {
         jdbcTemplate.update("""
             INSERT INTO kb_ingest_job
                 (id, kb_document_id, space_id, source_file_object_id, job_type, status,
-                 chunk_count, vector_status, created_by)
+                 progress_percent, current_stage, chunk_count, vector_status, created_by)
             VALUES
-                (?, ?, ?, ?, 'FULL', 'PENDING', 0, 'PENDING', ?)
+                (?, ?, ?, ?, 'FULL', 'PENDING', 0, 'QUEUED', 0, 'PENDING', ?)
             """, jobId, documentId, spaceId, fileObjectId, operatorId);
     }
 
@@ -320,15 +323,28 @@ public class RagflowRepository {
             UPDATE kb_document
             SET ingest_status = 'RUNNING'
             WHERE id = ?
+              AND is_deleted = 0
             """, documentId);
         jdbcTemplate.update("""
             UPDATE kb_ingest_job
             SET status = 'RUNNING',
+                progress_percent = 5,
+                current_stage = 'READ_FILE',
                 vector_status = 'PENDING',
                 started_at = NOW(),
                 error_message = NULL
             WHERE id = ?
             """, jobId);
+    }
+
+    public void updateIngestProgress(Long jobId, int progressPercent, String currentStage) {
+        jdbcTemplate.update("""
+            UPDATE kb_ingest_job
+            SET progress_percent = ?,
+                current_stage = ?
+            WHERE id = ?
+              AND status = 'RUNNING'
+            """, progressPercent, currentStage, jobId);
     }
 
     public void replaceChunks(Long spaceId, Long documentId, Long jobId, List<String> chunks, List<Long> vectorIds) {
@@ -359,6 +375,8 @@ public class RagflowRepository {
         jdbcTemplate.update("""
             UPDATE kb_ingest_job
             SET status = 'SUCCESS',
+                progress_percent = 100,
+                current_stage = 'COMPLETED',
                 vector_status = 'SUCCESS',
                 chunk_count = ?,
                 finished_at = NOW(),
@@ -367,15 +385,36 @@ public class RagflowRepository {
             """, chunkCount, jobId);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public boolean completeIngestIfActive(Long spaceId, Long documentId, Long jobId, String contentText,
+                                          List<String> chunks, List<Long> vectorIds) {
+        List<Long> activeDocuments = jdbcTemplate.queryForList("""
+            SELECT id
+            FROM kb_document
+            WHERE id = ?
+              AND space_id = ?
+              AND is_deleted = 0
+            FOR UPDATE
+            """, Long.class, documentId, spaceId);
+        if (activeDocuments.isEmpty()) {
+            return false;
+        }
+        replaceChunks(spaceId, documentId, jobId, chunks, vectorIds);
+        markIngestSuccess(documentId, jobId, contentText, chunks.size());
+        return true;
+    }
+
     public void markIngestFailed(Long documentId, Long jobId, String message) {
         jdbcTemplate.update("""
             UPDATE kb_document
             SET ingest_status = 'FAILED'
             WHERE id = ?
+              AND is_deleted = 0
             """, documentId);
         jdbcTemplate.update("""
             UPDATE kb_ingest_job
             SET status = 'FAILED',
+                current_stage = 'FAILED',
                 vector_status = 'FAILED',
                 finished_at = NOW(),
                 error_message = ?
@@ -587,6 +626,8 @@ public class RagflowRepository {
             rs.getString("ingest_status"),
             rs.getObject("latest_ingest_job_id", Long.class),
             rs.getString("ingest_job_status"),
+            rs.getObject("progress_percent", Integer.class),
+            rs.getString("current_stage"),
             rs.getString("vector_status"),
             rs.getObject("chunk_count", Integer.class),
             rs.getString("error_message"),

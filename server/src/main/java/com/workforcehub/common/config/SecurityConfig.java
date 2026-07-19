@@ -95,6 +95,8 @@ public class SecurityConfig {
             .httpBasic(AbstractHttpConfigurer::disable)
             .logout(AbstractHttpConfigurer::disable)
 
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             )

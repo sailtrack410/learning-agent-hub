@@ -177,7 +177,7 @@ export const useImStore = defineStore('employee-im', {
         }
       }
     },
-    async loadConversationDetail(conversationId: string | number, imApi: EmployeeImApi = employeeApi.im, currentUserId?: EntityId) {
+    async loadConversationDetail(conversationId: string | number, imApi: EmployeeImApi = employeeApi.im) {
       const seq = ++this._loadDetailSeq;
       this.error = '';
       try {
@@ -193,7 +193,7 @@ export const useImStore = defineStore('employee-im', {
           } else {
             record.memberCount = undefined;
           }
-          record.title = privateConversationTitle(detail, currentUserId) || detail.groupProfile?.title || mapped.title;
+          record.title = detail.groupProfile?.title || mapped.title;
           record.summaryTitle = record.title;
           record.badge = record.title.slice(0, 2);
           record.cards = [
@@ -212,12 +212,12 @@ export const useImStore = defineStore('employee-im', {
         throw error;
       }
     },
-    async loadVisibleConversationDetails(conversationIds?: Array<string | number>, imApi: EmployeeImApi = employeeApi.im, currentUserId?: EntityId) {
+    async loadVisibleConversationDetails(conversationIds?: Array<string | number>, imApi: EmployeeImApi = employeeApi.im) {
       const ids = (conversationIds?.length ? conversationIds : this.conversations.map((item) => item.id))
         .map((item) => String(item))
         .filter(Boolean)
         .slice(0, 20);
-      await Promise.all(ids.map((conversationId) => this.loadConversationDetail(conversationId, imApi, currentUserId).catch(() => undefined)));
+      await Promise.all(ids.map((conversationId) => this.loadConversationDetail(conversationId, imApi).catch(() => undefined)));
     },
     async loadOlderMessages(
       conversationId: string | number,
@@ -636,15 +636,6 @@ function memberRoleLabel(member: ImConversationMemberResponse) {
   return '成员';
 }
 
-function privateConversationTitle(detail: ImConversationDetailResponse, currentUserId?: EntityId) {
-  if (detail.conversation.conversationType !== 'PRIVATE') return '';
-  const users = detail.members.filter((member) => member.memberType === 'USER');
-  const target = currentUserId !== undefined && currentUserId !== null
-    ? users.find((member) => String(member.memberId) !== String(currentUserId))
-    : users.length === 1 ? users[0] : undefined;
-  return target?.displayName?.trim() || '';
-}
-
 export function mapImConversationToRecord(conversation: ImConversationSummaryResponse): ConversationRecord {
   const kind = normalizeConversationKind(conversation.conversationType);
   const title = conversation.title || fallbackConversationTitle(conversation.conversationType);
@@ -652,6 +643,7 @@ export function mapImConversationToRecord(conversation: ImConversationSummaryRes
   const summaryBody = lastMessage?.body || '暂无消息';
   return {
     id: String(conversation.conversationId),
+    conversationKey: conversation.conversationKey ?? undefined,
     kind,
     tone: toneOfKind(kind),
     badge: title.slice(0, 2),

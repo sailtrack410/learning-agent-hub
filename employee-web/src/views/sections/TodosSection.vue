@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useTodosSectionContext } from '../employee-shell-context';
 import type { TodoRecord } from '@/stores/shell';
 import AppButton from '../../components/ui/AppButton.vue';
 import TodoCreateDialog from '../../components/todos/TodoCreateDialog.vue';
+import todoHeroImage from '@/assets/education/generated/todo-hero.webp';
+import todoPendingImage from '@/assets/education/generated/todo-pending.webp';
+import todoTodayImage from '@/assets/education/generated/todo-today.webp';
+import todoCompletedImage from '@/assets/education/generated/todo-completed.webp';
 
 interface CalendarDay {
   key: string;
@@ -56,6 +54,11 @@ const visibleTodos = computed(() => shell.filteredTodos.filter((todo) => (
 const monthTodoCount = computed(() => shell.todos.filter((todo) => (
   isTaskDated(todo) && todo.endDate >= monthStartKey.value && todo.startDate <= monthEndKey.value
 )).length);
+const todayTodoCount = computed(() => shell.todos.filter((todo) => (
+  isTaskDated(todo) && todo.startDate <= todayKey && todo.endDate >= todayKey
+)).length);
+const completedTodoCount = computed(() => shell.todos.filter((todo) => todo.completed).length);
+const todayDayLabel = String(new Date().getDate()).padStart(2, '0');
 const calendarWeeks = computed(() => {
   const weeks: CalendarWeek[] = [];
   const month = visibleMonth.value.getMonth();
@@ -192,43 +195,58 @@ function selectTodo(todo: TodoRecord) {
 
 <template>
 <div class="workspace generic-workspace">
-  <header class="workspace-head todo-calendar-head">
-    <div class="workspace-title-group">
-      <button class="mobile-back" type="button" aria-label="返回列表" @click="backToList">
-        <ChevronLeft :size="22" />
-      </button>
-      <div class="workspace-head-text">
-        <h2 class="workspace-title">待办</h2>
-        <div class="workspace-meta-line">
-          <span>未完成 {{ pendingTodoCount }} 项</span>
-          <span>本月 {{ monthTodoCount }} 项</span>
+  <section class="todo-calendar-layout">
+    <section class="todo-overview-hero" :style="{ '--todo-hero-image': `url(${todoHeroImage})` }">
+      <div class="todo-hero-copy">
+        <button class="mobile-back" type="button" aria-label="返回列表" @click="backToList">
+          <span aria-hidden="true">‹</span>
+        </button>
+        <span class="todo-hero-eyebrow">学习计划台</span>
+        <h1>安排今天，也看清整个月</h1>
+        <p>课程学习、复习与协作事项统一进入时间轴。</p>
+        <AppButton variant="primary" size="sm" @click="showCreate = true">
+          添加待办
+        </AppButton>
+        <div class="todo-hero-board" aria-label="待办概览">
+          <article class="todo-hero-metric primary">
+            <img :src="todoPendingImage" alt="" />
+            <span><strong>{{ pendingTodoCount }}</strong><small>未完成</small></span>
+          </article>
+          <article class="todo-hero-metric">
+            <img :src="todoTodayImage" alt="" />
+            <span><strong>{{ todayTodoCount }}</strong><small>今天</small></span>
+          </article>
+          <article class="todo-hero-metric">
+            <img :src="todoCompletedImage" alt="" />
+            <span><strong>{{ completedTodoCount }}</strong><small>已完成</small></span>
+          </article>
         </div>
       </div>
-    </div>
-  </header>
+      <div class="todo-date-emblem" aria-label="当前日期">
+        <small>{{ monthYearLabel }}</small>
+        <strong>{{ todayDayLabel }}</strong>
+        <span>{{ compactMonthLabel }}</span>
+      </div>
+    </section>
 
-  <section class="todo-calendar-layout">
     <section class="todo-calendar-card">
       <header class="todo-month-title">
-        <div>
+        <div class="todo-month-copy">
+          <small>月度日历</small>
           <h3>{{ compactMonthLabel }}</h3>
           <span>{{ monthYearLabel }}</span>
         </div>
         <div class="todo-month-actions">
           <AppButton variant="secondary" size="sm" @click="shiftMonth(-1)">
-            <ChevronLeft :size="15" />
             上月
           </AppButton>
           <AppButton variant="secondary" size="sm" @click="goToday">
-            <CalendarDays :size="15" />
             今天
           </AppButton>
           <AppButton variant="secondary" size="sm" @click="shiftMonth(1)">
             下月
-            <ChevronRight :size="15" />
           </AppButton>
           <AppButton variant="primary" size="sm" @click="showCreate = true">
-            <Plus :size="15" />
             添加
           </AppButton>
         </div>
@@ -277,7 +295,11 @@ function selectTodo(todo: TodoRecord) {
             </div>
           </section>
         </div>
-        <p v-if="!visibleTodos.length" class="todo-calendar-empty">暂无待办</p>
+        <div v-if="!visibleTodos.length" class="todo-calendar-empty">
+          <img :src="todoTodayImage" alt="" />
+          <strong>本月暂无待办</strong>
+          <span>点击添加安排学习任务</span>
+        </div>
       </div>
     </section>
   </section>
@@ -285,3 +307,215 @@ function selectTodo(todo: TodoRecord) {
   <TodoCreateDialog :open="showCreate" @close="showCreate = false" />
 </div>
 </template>
+
+<style scoped>
+.todo-calendar-layout {
+  align-content: start;
+  gap: var(--space-16);
+  overflow: auto;
+  background-color: var(--surface-canvas);
+  background-image: var(--canvas-backdrop);
+}
+
+.todo-overview-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 20rem;
+  overflow: hidden;
+  padding: clamp(var(--space-24), 3vw, var(--space-40));
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-20);
+  background-color: var(--surface-accent);
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--surface-panel) 98%, transparent) 0%, color-mix(in srgb, var(--surface-panel) 90%, transparent) 38%, transparent 64%),
+    var(--todo-hero-image);
+  background-position: center;
+  background-size: cover;
+  box-shadow: var(--shadow-md);
+}
+
+.todo-hero-copy {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: var(--space-10);
+  width: min(51%, 38rem);
+  min-height: 100%;
+}
+
+.todo-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.85rem;
+  padding: 0 var(--space-10);
+  border: 1px solid color-mix(in srgb, var(--border-accent) 72%, transparent);
+  border-radius: 999px;
+  background: var(--surface-glass);
+  color: var(--text-accent);
+  font-size: var(--text-caption);
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.todo-hero-copy h1 {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: clamp(var(--text-title), 3vw, var(--text-headline));
+  line-height: 1.15;
+}
+
+.todo-hero-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.todo-hero-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  gap: var(--space-8);
+  margin-top: var(--space-6);
+}
+
+.todo-hero-metric {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+  padding: var(--space-8);
+  border: 1px solid color-mix(in srgb, var(--border-accent) 70%, transparent);
+  border-radius: var(--radius-12);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(.7rem);
+}
+
+.todo-hero-metric img {
+  width: 2.7rem;
+  height: 2.7rem;
+  flex: 0 0 auto;
+  border-radius: var(--radius-10);
+  object-fit: contain;
+}
+
+.todo-hero-metric span {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.todo-hero-metric strong {
+  color: var(--text-primary);
+  font-family: var(--font-family-display);
+  font-size: var(--text-subtitle-lg);
+  line-height: 1;
+}
+
+.todo-hero-metric small {
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
+}
+
+.todo-date-emblem {
+  position: absolute;
+  right: clamp(var(--space-18), 3vw, var(--space-32));
+  bottom: var(--space-20);
+  display: grid;
+  width: 6.4rem;
+  min-height: 7.6rem;
+  place-items: center;
+  padding: var(--space-10);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-16);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(.8rem);
+  transform: rotate(2deg);
+}
+
+.todo-date-emblem small,
+.todo-date-emblem span {
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.todo-date-emblem strong {
+  color: var(--text-accent);
+  font-family: var(--font-family-display);
+  font-size: 2.7rem;
+  line-height: 1;
+}
+
+.todo-calendar-card {
+  border-radius: var(--radius-20);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-md);
+}
+
+.todo-month-title {
+  min-height: 4.5rem;
+  padding: var(--space-14) var(--space-18);
+  background: var(--surface-glass);
+  backdrop-filter: blur(.6rem);
+}
+
+.todo-month-copy {
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  column-gap: var(--space-8);
+}
+
+.todo-month-copy small {
+  grid-column: 1 / -1;
+  color: var(--text-accent);
+  font-size: var(--text-caption);
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.todo-calendar-empty {
+  display: grid;
+  min-width: 12rem;
+  justify-items: center;
+  gap: var(--space-6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-14);
+  background: var(--surface-glass);
+  color: var(--text-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.todo-calendar-empty img {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-12);
+  object-fit: contain;
+}
+
+.todo-calendar-empty strong {
+  color: var(--text-primary);
+}
+
+.todo-calendar-empty span {
+  color: var(--text-tertiary);
+  font-size: var(--text-caption);
+}
+
+@media (max-width: 980px) {
+  .todo-overview-hero {
+    min-height: 18rem;
+    background-position: 64% center;
+  }
+
+  .todo-hero-copy {
+    width: min(65%, 36rem);
+  }
+}
+
+:global([data-theme='dark']) .todo-overview-hero {
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--surface-panel) 98%, transparent) 0%, color-mix(in srgb, var(--surface-panel) 92%, transparent) 42%, color-mix(in srgb, var(--surface-panel) 24%, transparent) 72%),
+    var(--todo-hero-image);
+}
+</style>

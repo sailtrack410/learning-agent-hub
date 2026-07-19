@@ -69,7 +69,7 @@ const opened = computed({
             <option value="PRIVATE">私有</option>
             <option value="ROLE">按角色</option>
             <option value="DEPARTMENT">按部门</option>
-            <option value="POSITION">按岗位</option>
+            <option value="POSITION">按课程角色</option>
             <option value="PUBLIC">全员可查阅</option>
           </select>
         </label>
@@ -94,7 +94,7 @@ const opened = computed({
           <select v-model="aclForm.subjectType">
             <option value="ROLE">角色</option>
             <option value="DEPARTMENT">部门</option>
-            <option value="POSITION">岗位</option>
+            <option value="POSITION">课程角色</option>
           </select>
           <select v-model="aclForm.subjectId">
             <option value="">请选择对象</option>
@@ -110,7 +110,7 @@ const opened = computed({
         </form>
         <AdminTable :columns="aclColumns" :rows="aclItems" :loading="aclLoading" row-key="aclId">
           <template #cell-subjectType="{ row }">
-            {{ row.subjectType === 'ROLE' ? '角色' : row.subjectType === 'DEPARTMENT' ? '部门' : '岗位' }}
+            {{ row.subjectType === 'ROLE' ? '角色' : row.subjectType === 'DEPARTMENT' ? '学院或班级' : '课程角色' }}
           </template>
           <template #cell-subjectId="{ row }">
             {{ aclSubjectName(row) }}

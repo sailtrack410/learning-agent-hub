@@ -21,7 +21,7 @@ const conversation: ImConversationSummaryResponse = {
   conversationId: 7001,
   conversationType: 'PRIVATE',
   conversationKey: 'PRIVATE:2002:2003',
-  title: '张三与李四',
+  title: '张三',
   avatarFileId: null,
   boundAgentId: null,
   lastMessageSeq: 2,
@@ -130,7 +130,7 @@ describe('IM store', () => {
     expect(record).toMatchObject({
       id: '7001',
       kind: 'private',
-      title: '张三与李四',
+      title: '张三',
       subtitle: '下午同步一下排班。',
       unread: 1,
       flow: '私聊',
@@ -142,6 +142,17 @@ describe('IM store', () => {
       { label: '未读数', value: '1', hint: '未读消息' },
       { label: '会话状态', value: '正常', hint: '状态' },
     ]);
+  });
+
+  it('preserves the course class conversation key for list presentation', () => {
+    const record = mapImConversationToRecord({
+      ...conversation,
+      conversationType: 'GROUP',
+      conversationKey: 'COURSE_CLASS:8100001:8200002',
+      title: 'Java Web 应用开发 · 软件工程 2024 级 1 班',
+    });
+
+    expect(record.conversationKey).toBe('COURSE_CLASS:8100001:8200002');
   });
 
   it('maps backend message into shell message record', () => {
@@ -316,7 +327,7 @@ describe('IM store', () => {
     expect(im.conversations[0].memberCount).toBeUndefined();
   });
 
-  it('uses the other private chat member as conversation title when both members are returned', async () => {
+  it('keeps the contextual private chat title returned by the backend when detail loads', async () => {
     const im = useImStore();
     const imApi: EmployeeImApi = {
       ...createImApi(),
@@ -345,7 +356,7 @@ describe('IM store', () => {
     };
 
     await im.loadConversations({}, imApi);
-    await im.loadConversationDetail(7001, imApi, 2003);
+    await im.loadConversationDetail(7001, imApi);
 
     expect(im.conversations[0].title).toBe('张三');
     expect(im.conversations[0].summaryTitle).toBe('张三');
@@ -582,7 +593,7 @@ describe('IM store', () => {
 
     expect(record).toMatchObject({
       id: '7001',
-      title: '张三与李四',
+      title: '张三',
       flow: '私聊',
     });
     expect(im.conversations[0].id).toBe('7001');

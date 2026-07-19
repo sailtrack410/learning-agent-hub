@@ -150,7 +150,7 @@ class ModuleImApiIntegrationTest extends LocalIntegrationTestSupport {
             .andExpect(jsonPath("$.data", hasSize(1)))
             .andExpect(jsonPath("$.data[0].conversationId").value(7001))
             .andExpect(jsonPath("$.data[0].conversationType").value("PRIVATE"))
-            .andExpect(jsonPath("$.data[0].title").value("张三与李四"))
+            .andExpect(jsonPath("$.data[0].title").value("李四"))
             .andExpect(jsonLong("$.data[0].avatarFileId", avatarAttachmentRefId))
             .andExpect(jsonPath("$.data[0].lastMessageSeq").value(2))
             .andExpect(jsonPath("$.data[0].lastMessage.senderType").value("USER"))
@@ -293,6 +293,7 @@ class ModuleImApiIntegrationTest extends LocalIntegrationTestSupport {
             .andExpect(jsonPath("$.code").value(0))
             .andExpect(jsonPath("$.data.conversation.conversationId").value(7001))
             .andExpect(jsonPath("$.data.conversation.conversationType").value("PRIVATE"))
+            .andExpect(jsonPath("$.data.conversation.title").value("李四"))
             .andExpect(jsonPath("$.data.conversation.lastMessage.contentText").value("下午同步一下排班。"))
             .andExpect(jsonPath("$.data.members", hasSize(2)))
             .andExpect(jsonLong("$.data.members[0].memberId", EMPLOYEE_USER_ID))
@@ -1842,7 +1843,7 @@ class ModuleImApiIntegrationTest extends LocalIntegrationTestSupport {
             .andExpect(jsonPath("$.code").value(0))
             .andExpect(jsonPath("$.data.conversationType").value("PRIVATE"))
             .andExpect(jsonPath("$.data.conversationKey").value("PRIVATE:2002:2003"))
-            .andExpect(jsonPath("$.data.title").value("张三与李四"))
+            .andExpect(jsonPath("$.data.title").value("李四"))
             .andExpect(jsonPath("$.data.lastMessageSeq").value(0))
             .andExpect(jsonPath("$.data.lastReadSeq").value(0))
             .andExpect(jsonPath("$.data.unreadCount").value(0))
@@ -1875,7 +1876,7 @@ class ModuleImApiIntegrationTest extends LocalIntegrationTestSupport {
             .andExpect(jsonPath("$.code").value(0))
             .andExpect(jsonPath("$.data.conversationType").value("PRIVATE"))
             .andExpect(jsonPath("$.data.conversationKey").value("PRIVATE:2002:2003"))
-            .andExpect(jsonPath("$.data.title").value("张三与李四"));
+            .andExpect(jsonPath("$.data.title").value("张三"));
     }
 
     @Test

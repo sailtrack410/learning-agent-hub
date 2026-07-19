@@ -71,9 +71,45 @@ const teamConversation: ConversationRecord = {
   },
 };
 
+const privateConversation: ConversationRecord = {
+  ...agentConversation,
+  id: '9001',
+  kind: 'private',
+  title: '演示教师',
+  tag: '私聊',
+  flow: '私聊',
+};
+
 describe('useMessagesState', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+  });
+
+  it('shows only the other participant in a private conversation title', () => {
+    const shell = useShellStore();
+    const im = useImStore();
+    const session = useSessionStore();
+    im.conversations = [privateConversation];
+    shell.selectItem('messages', '9001');
+    session.user = {
+      userId: 22002,
+      userType: 'USER',
+      loginName: 'demo.student',
+      displayName: '演示学生',
+    };
+
+    const state = useMessagesState({
+      shell,
+      im,
+      session,
+      wsConnected: ref(false),
+      showToast: vi.fn(),
+      navigateMessagesConversation: vi.fn(),
+      syncConversationMessages: vi.fn(),
+      openFilePreviewFromUrl: vi.fn(),
+    });
+
+    expect(state.activeConversationTitle.value).toBe('演示教师');
   });
 
   it('shows agent loading card before send API finishes', async () => {

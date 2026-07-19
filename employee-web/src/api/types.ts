@@ -16,6 +16,481 @@ export interface PageResult<T> {
   list: T[];
 }
 
+export interface CourseKnowledgePointResponse {
+  knowledgePointId: EntityId;
+  pointCode: string;
+  pointName: string;
+  summary?: string | null;
+  sortOrder: number;
+}
+
+export interface CourseChapterResponse {
+  chapterId: EntityId;
+  chapterNo: number;
+  chapterName: string;
+  summary?: string | null;
+  contentType: 'ARTICLE';
+  contentJson?: string | null;
+  status: 'DRAFT' | 'PUBLISHED';
+  statusName: string;
+  knowledgePoints: CourseKnowledgePointResponse[];
+}
+
+export interface CourseInvitationResponse {
+  token: string;
+  expiresAt: string;
+}
+
+export interface CourseResourcePreviewResponse {
+  attachmentRefId: EntityId;
+  fileName: string;
+  previewStatus: 'PENDING' | 'CONVERTING' | 'READY' | 'FAILED';
+  previewUrl?: string | null;
+  downloadUrl: string;
+  errorMessage?: string | null;
+}
+
+export interface CourseKnowledgeDocumentResponse {
+  documentId: EntityId;
+  attachmentRefId: EntityId;
+  title: string;
+  mimeType?: string | null;
+  fileSize: number;
+  parserTypeName: string;
+  ingestStatus: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+  ingestStatusName: string;
+  ingestProgressPercent: number;
+  ingestStage: string;
+  ingestStageName: string;
+  vectorStatus: 'PENDING' | 'SUCCESS' | 'FAILED';
+  vectorStatusName: string;
+  chunkCount: number;
+  errorMessage?: string | null;
+  chapterId?: EntityId | null;
+  chapterName?: string | null;
+  knowledgePoints: Array<{ knowledgePointId: EntityId; pointName: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseKnowledgeDocumentRequest {
+  attachmentRefId: EntityId;
+  chapterId?: EntityId | null;
+  knowledgePointIds: EntityId[];
+}
+
+export interface StudentProfileDimensionResponse {
+  dimensionCode: string;
+  dimensionName: string;
+  conclusion: string;
+  confidence: number;
+  evidenceSummary: string;
+  updatedAt: string;
+}
+
+export interface StudentProfileMessageResponse {
+  messageId: EntityId;
+  role: 'USER' | 'ASSISTANT';
+  dimensionCode?: string | null;
+  content: string;
+  createdAt: string;
+}
+
+export interface StudentProfileResponse {
+  profileId: EntityId;
+  versionNo: number;
+  completedDimensions: number;
+  totalDimensions: number;
+  complete: boolean;
+  nextDimensionCode?: string | null;
+  nextQuestion?: string | null;
+  dimensions: StudentProfileDimensionResponse[];
+  messages: StudentProfileMessageResponse[];
+}
+
+export type AssessmentQuestionType = 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+
+export interface AssessmentResponse {
+  assessmentId: EntityId;
+  courseId: EntityId;
+  title: string;
+  description?: string | null;
+  totalScore: number;
+  durationMinutes: number;
+  questionCount: number;
+  questions: Array<{
+    questionId: EntityId;
+    knowledgePointId: EntityId;
+    knowledgePointName: string;
+    questionType: AssessmentQuestionType;
+    prompt: string;
+    options: Array<{ value: string; label: string }>;
+    score: number;
+  }>;
+}
+
+export interface AssessmentSubmitRequest {
+  idempotencyKey: string;
+  durationSeconds: number;
+  answers: Array<{
+    questionId: EntityId;
+    selectedValues: string[];
+    durationSeconds: number;
+  }>;
+}
+
+export interface AssessmentAttemptResponse {
+  attemptId: EntityId;
+  assessmentId: EntityId;
+  attemptNo: number;
+  totalScore: number;
+  earnedScore: number;
+  durationSeconds: number;
+  report: string;
+  profileUpdated: boolean;
+  submittedAt: string;
+  answers: Array<{
+    questionId: EntityId;
+    prompt: string;
+    questionType: AssessmentQuestionType;
+    knowledgePointName: string;
+    selectedValues: string[];
+    correctValues: string[];
+    correct: boolean;
+    earnedScore: number;
+    score: number;
+    errorType?: string | null;
+    analysis: string;
+    durationSeconds: number;
+  }>;
+  diagnoses: Array<{
+    knowledgePointId: EntityId;
+    knowledgePointName: string;
+    masteryScore: number;
+    attemptCount: number;
+    correctCount: number;
+  }>;
+}
+
+export type LearningPathNodeStatus = 'LOCKED' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+
+export interface LearningPathNodeResponse {
+  nodeId: EntityId;
+  sequenceNo: number;
+  knowledgePointId: EntityId;
+  knowledgePointName: string;
+  chapterId: EntityId;
+  chapterName: string;
+  learningObjective: string;
+  resourceType: 'COURSE_ARTICLE';
+  resourceRefId: EntityId;
+  resourceTitle: string;
+  estimatedMinutes: number;
+  completionCondition: string;
+  status: LearningPathNodeStatus;
+  masteryScore?: number | null;
+  recommendationReason: string;
+}
+
+export interface LearningPathRecommendationResponse {
+  recommendationId: EntityId;
+  nodeId: EntityId;
+  knowledgePointId: EntityId;
+  knowledgePointName: string;
+  resourceType: 'COURSE_ARTICLE';
+  resourceRefId: EntityId;
+  resourceTitle: string;
+  priorityNo: number;
+  reason: string;
+  status: 'ACTIVE' | 'COMPLETED';
+}
+
+export interface LearningPathResponse {
+  pathId: EntityId;
+  courseId: EntityId;
+  courseName: string;
+  versionNo: number;
+  profileVersionNo: number;
+  sourceAssessmentAttemptId?: EntityId | null;
+  generationReason: string;
+  progressPercent: number;
+  currentNodeId?: EntityId | null;
+  createdAt: string;
+  todayNodes: LearningPathNodeResponse[];
+  nodes: LearningPathNodeResponse[];
+  recommendations: LearningPathRecommendationResponse[];
+}
+
+export type LearningResourceType = 'EXPLANATION' | 'MIND_MAP' | 'EXERCISE' | 'CODE_LAB' | 'EXTENDED_READING';
+export type LearningResourceValidationStatus = 'PASSED' | 'NEEDS_REVIEW' | 'REJECTED';
+export type LearningResourcePublicationStatus = 'DRAFT' | 'PUBLISHED' | 'WITHDRAWN' | 'REJECTED';
+export type LearningResourceFeedbackType = 'HELPFUL' | 'TOO_DIFFICULT' | 'TOO_EASY' | 'NOT_RELEVANT';
+
+export interface GeneratedLearningResourceResponse {
+  resourceId: EntityId;
+  taskId: EntityId;
+  courseId: EntityId;
+  courseName: string;
+  chapterId: EntityId;
+  chapterName: string;
+  knowledgePointId: EntityId;
+  knowledgePointName: string;
+  resourceType: LearningResourceType;
+  resourceTypeName: string;
+  title: string;
+  summary: string;
+  content: string;
+  contentFormat: 'MARKDOWN' | 'MERMAID';
+  validationStatus: LearningResourceValidationStatus;
+  validationStatusName: string;
+  validationReason: string;
+  confidence: number;
+  publicationStatus: LearningResourcePublicationStatus;
+  publicationStatusName: string;
+  reviewNote?: string | null;
+  reviewedAt?: string | null;
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  citations: Array<{
+    documentId: EntityId;
+    chunkId: EntityId;
+    documentTitle: string;
+    excerpt: string;
+    pageNo?: number | null;
+    relevanceScore: number;
+  }>;
+}
+
+export interface LearningResourceTaskStepResponse {
+  stepId: EntityId;
+  roleCode: string;
+  roleName: string;
+  stepOrder: number;
+  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  statusName: string;
+  inputSummary?: string | null;
+  outputSummary?: string | null;
+  liveOutput?: string | null;
+  modelName?: string | null;
+  durationMs?: number | null;
+  failureMessage?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+}
+
+export interface LearningResourceTaskResponse {
+  taskId: EntityId;
+  studentUserId?: EntityId | null;
+  courseId: EntityId;
+  courseName: string;
+  chapterId: EntityId;
+  chapterName: string;
+  knowledgePointId: EntityId;
+  knowledgePointName: string;
+  profileVersionNo: number;
+  requestMessage?: string | null;
+  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  statusName: string;
+  progressPercent: number;
+  currentRoleCode?: string | null;
+  currentRoleName?: string | null;
+  attemptNo: number;
+  modelName?: string | null;
+  failureType?: string | null;
+  failureMessage?: string | null;
+  totalDurationMs?: number | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  steps: LearningResourceTaskStepResponse[];
+  resources: GeneratedLearningResourceResponse[];
+}
+
+export interface CreateLearningResourceTaskRequest {
+  courseId: EntityId;
+  knowledgePointId: EntityId;
+  idempotencyKey: string;
+  requestMessage?: string;
+}
+
+export interface LearningResourceUpdateRequest {
+  title: string;
+  summary: string;
+  content: string;
+}
+
+export interface LearningResourceFeedbackResponse {
+  feedbackId: EntityId;
+  resourceId: EntityId;
+  feedbackType: LearningResourceFeedbackType;
+  feedbackTypeName: string;
+  comment?: string | null;
+  profileVersionNo?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseLearningClassSummaryResponse {
+  classId?: EntityId | null;
+  className: string;
+  studentCount: number;
+  riskStudentCount: number;
+  completionRate: number;
+  averageMastery?: number | null;
+}
+
+export interface CourseLearningStudentSummaryResponse {
+  studentUserId: EntityId;
+  studentNo: string;
+  studentName: string;
+  classId?: EntityId | null;
+  className?: string | null;
+  profileVersionNo: number;
+  profileDimensionCount: number;
+  profileSummary?: string | null;
+  progressPercent: number;
+  averageMastery?: number | null;
+  assessmentAttemptCount: number;
+  lastLearningAt?: string | null;
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  riskReasons: string[];
+}
+
+export interface CourseWeakKnowledgePointResponse {
+  knowledgePointId: EntityId;
+  knowledgePointName: string;
+  averageMastery?: number | null;
+  assessedStudentCount: number;
+  weakStudentCount: number;
+}
+
+export interface CourseLearningOverviewResponse {
+  courseId: EntityId;
+  courseName: string;
+  studentCount: number;
+  activeStudentCount: number;
+  riskStudentCount: number;
+  completionRate: number;
+  averageMastery?: number | null;
+  publishedResourceCount: number;
+  resourceViewerCount: number;
+  resourceViewCount: number;
+  classes: CourseLearningClassSummaryResponse[];
+  students: CourseLearningStudentSummaryResponse[];
+  weakKnowledgePoints: CourseWeakKnowledgePointResponse[];
+}
+
+export interface LearningResourcePushResponse {
+  pushId: EntityId;
+  resourceId: EntityId;
+  courseId: EntityId;
+  targetType: 'STUDENT' | 'CLASS';
+  targetId: EntityId;
+  targetName: string;
+  status: 'ACTIVE';
+  createdAt: string;
+}
+
+export interface StudentLearningDashboardResponse {
+  courseCount: number;
+  todayTaskCount: number;
+  overallProgress: number;
+  averageMastery?: number | null;
+  pendingAssessmentCount: number;
+  recommendationCount: number;
+  courses: Array<{
+    courseId: EntityId;
+    courseName: string;
+    coverAttachmentRefId?: EntityId | null;
+    teacherName?: string | null;
+    totalHours: number;
+    progressPercent: number;
+    averageMastery?: number | null;
+    todayTaskCount: number;
+    pendingAssessmentCount: number;
+    recommendationCount: number;
+    currentNodeTitle?: string | null;
+  }>;
+  todayTasks: Array<{
+    courseId: EntityId;
+    courseName: string;
+    nodeId: EntityId;
+    chapterId: EntityId;
+    chapterName: string;
+    resourceTitle: string;
+    estimatedMinutes: number;
+    status: 'IN_PROGRESS' | 'PENDING';
+    recommendationReason: string;
+  }>;
+  recommendations: Array<{
+    courseId: EntityId;
+    courseName: string;
+    nodeId: EntityId;
+    resourceRefId: EntityId;
+    resourceTitle: string;
+    priorityNo: number;
+    reason: string;
+  }>;
+}
+
+export interface CourseResponse {
+  courseId: EntityId;
+  courseCode: string;
+  courseName: string;
+  summary?: string | null;
+  learningObjectives?: string | null;
+  prerequisites?: string | null;
+  teacherName?: string | null;
+  coverAttachmentRefId?: EntityId | null;
+  totalHours: number;
+  status: 'DRAFT' | 'PUBLISHED';
+  statusName: string;
+  teacherRole?: 'OWNER' | 'COLLABORATOR' | null;
+  enrolled?: boolean;
+  teachers: Array<{
+    userId: EntityId;
+    teacherName: string;
+    memberRole: 'OWNER' | 'COLLABORATOR';
+  }>;
+  chapterCount: number;
+  knowledgePointCount: number;
+  createdAt: string;
+  updatedAt: string;
+  chapters: CourseChapterResponse[];
+  dependencies: Array<{ prerequisitePointCode: string; dependentPointCode: string }>;
+}
+
+export interface CourseSaveRequest {
+  courseCode: string;
+  courseName: string;
+  summary?: string;
+  learningObjectives?: string;
+  prerequisites?: string;
+  teacherName?: string;
+  coverAttachmentRefId?: EntityId | null;
+  totalHours: number;
+  status: 'DRAFT' | 'PUBLISHED';
+}
+
+export interface CourseOutlineSaveRequest {
+  chapters: Array<{
+    chapterId?: EntityId;
+    chapterName: string;
+    summary?: string;
+    knowledgePoints: Array<{ pointCode: string; pointName: string; summary?: string }>;
+  }>;
+  dependencies: Array<{ prerequisitePointCode: string; dependentPointCode: string }>;
+}
+
+export interface CourseArticleSaveRequest {
+  title: string;
+  summary?: string;
+  contentJson: string;
+  status: 'DRAFT' | 'PUBLISHED';
+}
+
 export interface LoginRequest {
   loginName: string;
   password: string;
@@ -53,6 +528,7 @@ export interface LoginResponse {
 }
 
 export interface CurrentUserResponse extends LoginResponse {
+  educationRole?: 'STUDENT' | 'TEACHER' | null;
   email?: string | null;
   primaryDeptId?: EntityId | null;
   positionId?: EntityId | null;

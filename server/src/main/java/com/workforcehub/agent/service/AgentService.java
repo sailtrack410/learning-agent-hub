@@ -1609,6 +1609,7 @@ public class AgentService {
             case "doubao" -> "https://ark.cn-beijing.volces.com/api/v3";
             case "anthropic" -> "https://api.anthropic.com/v1";
             case "siliconflow" -> "https://api.siliconflow.cn/v1";
+            case "xfyun" -> "https://spark-api-open.xf-yun.com/v1";
             case "mimo" -> "https://api.xiaomimimo.com/v1";
             default -> null;
         };
@@ -1622,6 +1623,7 @@ public class AgentService {
             case "qwen" -> "通义千问";
             case "doubao" -> "豆包";
             case "siliconflow" -> "硅基流动";
+            case "xfyun" -> "科大讯飞星火";
             case "mimo" -> "MiMo";
             case "openai-compatible" -> "兼容接入";
             default -> "其他供应商";

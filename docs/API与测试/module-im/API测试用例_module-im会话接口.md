@@ -51,7 +51,7 @@ cd server && env TEST_DB_NAME=<unique_name> mvn -Dtest=ModuleAuthApiIntegrationT
 
 | 用例编号 | 优先级 | 接口 | 场景 | 预期 |
 | --- | --- | --- | --- | --- |
-| IM-PRIVATE-001 | P0 | `POST /api/employee/im/private-conversations` | 直属上下级发起私聊 | `code=0`；返回 `conversationType=PRIVATE` |
+| IM-PRIVATE-001 | P0 | `POST /api/employee/im/private-conversations` | 直属上下级发起私聊 | `code=0`；返回 `conversationType=PRIVATE`，`title` 仅为对方姓名 |
 | IM-PRIVATE-002 | P0 | `POST /api/employee/im/private-conversations` | 重复发起同一私聊 | `code=0`；返回同一个活跃会话 |
 | IM-PRIVATE-003 | P1 | `POST /api/employee/im/private-conversations` | 员工和自己发起私聊 | `code=400`；提示不能和自己发起私聊 |
 | IM-PRIVATE-004 | P1 | `POST /api/employee/im/private-conversations` | 不存在目标用户 | `code=404`；`message=目标用户不存在` |

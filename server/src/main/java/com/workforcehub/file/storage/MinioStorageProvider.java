@@ -5,6 +5,7 @@ import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
@@ -113,6 +114,20 @@ public class MinioStorageProvider implements StorageProvider {
             return new StorageObjectResource(new InputStreamResource(object), stat.size());
         } catch (Exception e) {
             throw new BizException(404, "文件对象不存在");
+        }
+    }
+
+    @Override
+    public void storeObject(String bucketName, String objectKey, String mimeType, InputStream inputStream, long size) {
+        try {
+            minioClient.putObject(PutObjectArgs.builder()
+                .bucket(bucketName)
+                .object(objectKey)
+                .contentType(mimeType)
+                .stream(inputStream, size, -1)
+                .build());
+        } catch (Exception e) {
+            throw new BizException(500, "MinIO预览文件保存失败");
         }
     }
 

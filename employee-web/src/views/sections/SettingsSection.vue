@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import {
+  Building2,
   Camera,
+  CheckCircle2,
   ChevronLeft,
   LogOut,
   MoonStar,
+  ShieldCheck,
+  SlidersHorizontal,
   SunMedium,
+  UserRound,
 } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -13,7 +18,6 @@ import type {
   AccentColor,
   BubbleStyle,
   FontScale,
-  OrgUserSummaryResponse,
   PresenceStatus,
   UpdateEmployeePreferenceRequest,
 } from '@/api';
@@ -22,22 +26,26 @@ import { useCurrentUserAvatarUrl } from '@/composables/useCurrentUserAvatarUrl';
 import { usePersonalFileTransfer } from '@/composables/usePersonalFileTransfer';
 import { ensureBrowserNotificationPermission } from '@/services/notifications';
 import { useSettingsSectionContext } from '../employee-shell-context';
-import { displayField, employmentStatusLabel } from '@/utils/employee-format';
+import { displayField } from '@/utils/employee-format';
 import { normalizeSettingsPanel, shellUser } from '@/stores/shell';
 import AppAvatar from '../../components/ui/AppAvatar.vue';
 import AppButton from '../../components/ui/AppButton.vue';
 import AppDialog from '../../components/ui/AppDialog.vue';
 import AppErrorState from '../../components/ui/AppErrorState.vue';
 import AppInput from '../../components/ui/AppInput.vue';
+import personalCenterBackground from '@/assets/education/personal-center-background-wide.webp';
+import learningIdentityIcon from '@/assets/education/icons/learning-identity.webp';
+import learningAffiliationIcon from '@/assets/education/icons/learning-affiliation.webp';
+import accountSecurityIcon from '@/assets/education/icons/account-security.webp';
+import learningPreferencesIcon from '@/assets/education/icons/learning-preferences.webp';
+import avatarSettingsIcon from '@/assets/education/icons/avatar-settings.webp';
 
 type FieldRows = Array<[string, string]>;
 type NotificationPreferenceField = 'notifSound' | 'notifDesktop' | 'notifMentionOnly' | 'notifUnreadBadge';
 
 interface RelationTree {
   department: string;
-  managerName: string;
   ownName: string;
-  subordinates: OrgUserSummaryResponse[];
 }
 
 const {
@@ -112,7 +120,12 @@ const activeProfile = computed(() => shell.activeProfile);
 const selectedProfileId = computed(() => activeProfile.value.id);
 const currentUserName = computed(() => session.displayName || shellUser.name);
 const currentUserShortName = computed(() => session.shortName || shellUser.shortName);
-const profileStatusLabel = computed(() => employmentStatusLabel(session.profile?.employmentStatus ?? session.user?.employmentStatus));
+const isTeacher = computed(() => session.educationRole === 'TEACHER');
+const educationRoleName = computed(() => (isTeacher.value ? '课程教师' : '学生'));
+const educationIdLabel = computed(() => (isTeacher.value ? '教师编号' : '学号'));
+const organizationLabel = computed(() => (
+  session.departmentName?.includes('班') ? '所属班级' : '所属学院'
+));
 const currentEmail = computed(() => session.user?.email?.trim() ?? '');
 const themeLabel = computed(() => (shell.theme === 'light' ? '浅色' : '深色'));
 const presenceStatusLabel = computed(() => (
@@ -126,8 +139,8 @@ const passwordChangeCodeButtonText = computed(() => (
   passwordChangeCodeSending.value ? '发送中' : passwordChangeCodeCooldown.label.value
 ));
 const profileRows = computed<FieldRows>(() => [
-  ['岗位', displayField(session.profile?.positionName)],
-  ['入职日期', displayField(session.profile?.hireDate)],
+  ['学习身份', educationRoleName.value],
+  [educationIdLabel.value, displayField(session.profile?.employeeNo)],
 ]);
 const accountRows = computed<FieldRows>(() => [
   ['登录名', displayField(session.user?.loginName)],
@@ -139,19 +152,14 @@ const relationTree = computed<RelationTree>(() => {
   const ownName = session.displayName || currentUserName.value;
   return {
     department: session.departmentName || '组织',
-    managerName: session.manager?.realName ?? '',
     ownName,
-    subordinates: session.subordinates,
   };
 });
 const organizationRows = computed<FieldRows>(() => [
-  ['所属部门', relationTree.value.department],
-  ['岗位', displayField(session.profile?.positionName)],
-  ['直属上级', displayField(relationTree.value.managerName || session.profile?.managerName)],
-  ['直属下级', `${relationTree.value.subordinates.length} 人`],
+  [organizationLabel.value, relationTree.value.department],
+  ['平台身份', educationRoleName.value],
+  [educationIdLabel.value, displayField(session.profile?.employeeNo)],
 ]);
-const colleaguesLoading = computed(() => session.profileLoading);
-const colleaguesError = computed(() => session.profileError);
 const preferenceDisabled = computed(() => !preferencesHydrated.value);
 
 void hydrateUserPreferences();
@@ -525,14 +533,21 @@ onBeforeUnmount(() => {
     />
 
     <section v-if="selectedProfileId === 'profile'" class="personal-center">
-      <article class="personal-center-head">
-        <AppAvatar :label="currentUserShortName" :image="shell.avatarUrl" tone="primary" size="xl" status="online" />
-        <div class="personal-center-title">
-          <h3>{{ currentUserName }}</h3>
-          <p>
-            <span v-if="session.departmentName">{{ session.departmentName }}</span>
-            <span v-if="session.positionName"> · {{ session.positionName }}</span>
-          </p>
+      <article class="personal-center-head" :style="{ '--personal-center-background': `url(${personalCenterBackground})` }">
+        <div class="personal-center-profile">
+          <span class="personal-avatar-frame">
+            <AppAvatar :label="currentUserShortName" :image="shell.avatarUrl" tone="primary" size="xl" status="online" />
+            <img :src="avatarSettingsIcon" alt="" aria-hidden="true" />
+          </span>
+          <div class="personal-center-title">
+            <span class="personal-center-kicker">学习身份档案</span>
+            <h3>{{ currentUserName }}</h3>
+            <p>{{ displayField(session.departmentName) }}</p>
+            <div class="personal-center-badges">
+              <span><UserRound :size="14" />{{ educationRoleName }}</span>
+              <span><CheckCircle2 :size="14" />{{ presenceStatusLabel }}</span>
+            </div>
+          </div>
         </div>
         <input
           ref="avatarPickerInput"
@@ -542,6 +557,7 @@ onBeforeUnmount(() => {
           @change="handleAvatarSelected"
         />
         <div class="personal-center-actions">
+          <div class="personal-center-signal"><small>{{ educationIdLabel }}</small><strong>{{ displayField(session.profile?.employeeNo) }}</strong></div>
           <AppButton variant="secondary" size="sm" :disabled="avatarUploading" @click="openAvatarPicker">
             <Camera :size="15" />
             {{ avatarUploading ? '上传中' : '更换头像' }}
@@ -551,10 +567,11 @@ onBeforeUnmount(() => {
       </article>
 
       <section class="personal-status-grid" aria-label="个人状态">
-        <article class="personal-status-card">
+        <article class="personal-status-card personal-status-card-identity">
+          <img class="personal-status-art" :src="learningIdentityIcon" alt="" aria-hidden="true" />
           <header>
-            <span>身份状态</span>
-            <strong>{{ profileStatusLabel }}</strong>
+            <span><UserRound :size="16" />学习身份</span>
+            <strong>{{ educationRoleName }}</strong>
           </header>
           <dl class="personal-status-list">
             <div v-for="row in profileRows" :key="row[0]">
@@ -564,29 +581,31 @@ onBeforeUnmount(() => {
           </dl>
         </article>
 
-        <article class="personal-status-card">
+        <article class="personal-status-card personal-status-card-organization">
+          <img class="personal-status-art" :src="learningAffiliationIcon" alt="" aria-hidden="true" />
           <header>
-            <span>组织状态</span>
+            <span><Building2 :size="16" />{{ isTeacher ? '教学归属' : '学习归属' }}</span>
             <strong>{{ displayField(session.departmentName) }}</strong>
           </header>
           <dl class="personal-status-list">
             <div>
-              <dt>直属上级</dt>
-              <dd>{{ displayField(relationTree.managerName || session.profile?.managerName) }}</dd>
+              <dt>{{ organizationLabel }}</dt>
+              <dd>{{ displayField(session.departmentName) }}</dd>
             </div>
             <div>
-              <dt>直属下级</dt>
-              <dd>{{ relationTree.subordinates.length }} 人</dd>
+              <dt>平台身份</dt>
+              <dd>{{ educationRoleName }}</dd>
             </div>
           </dl>
           <footer>
-            <button type="button" @click="selectSettingsItem('organization')">查看组织关系</button>
+            <button type="button" @click="selectSettingsItem('organization')">查看学习归属</button>
           </footer>
         </article>
 
-        <article class="personal-status-card">
+        <article class="personal-status-card personal-status-card-security">
+          <img class="personal-status-art" :src="accountSecurityIcon" alt="" aria-hidden="true" />
           <header>
-            <span>账号状态</span>
+            <span><ShieldCheck :size="16" />账号状态</span>
             <strong>{{ session.user ? '正常' : '未登录' }}</strong>
           </header>
           <dl class="personal-status-list">
@@ -606,9 +625,10 @@ onBeforeUnmount(() => {
           </footer>
         </article>
 
-        <article class="personal-status-card">
+        <article class="personal-status-card personal-status-card-preferences">
+          <img class="personal-status-art" :src="learningPreferencesIcon" alt="" aria-hidden="true" />
           <header>
-            <span>偏好状态</span>
+            <span><SlidersHorizontal :size="16" />偏好状态</span>
             <strong>{{ presenceStatusLabel }}</strong>
           </header>
           <dl class="personal-status-list">
@@ -640,32 +660,18 @@ onBeforeUnmount(() => {
 
       <article class="settings-card">
         <header class="settings-card-head">
-          <h3>组织链路</h3>
+          <h3>{{ isTeacher ? '教学归属' : '学习归属' }}</h3>
         </header>
         <div class="settings-org-chart compact-org-chart">
           <div class="settings-org-level">
             <span class="settings-org-node department-node">{{ relationTree.department }}</span>
           </div>
           <div class="settings-org-level">
-            <span class="settings-org-node">{{ relationTree.managerName || '暂无上级' }}</span>
             <span class="settings-org-node current-user-node">{{ relationTree.ownName }}</span>
           </div>
         </div>
       </article>
 
-      <article class="settings-card">
-        <header class="settings-card-head">
-          <h3>直属下级</h3>
-        </header>
-        <p v-if="colleaguesError" class="dialog-error">{{ colleaguesError }}</p>
-        <p v-else-if="colleaguesLoading" class="form-hint">加载中</p>
-        <div v-else-if="relationTree.subordinates.length" class="settings-member-list compact-member-list">
-          <span v-for="user in relationTree.subordinates" :key="user.userId">
-            {{ user.realName }}
-          </span>
-        </div>
-        <p v-else class="empty-inline">暂无下属</p>
-      </article>
     </section>
 
     <section v-else-if="selectedProfileId === 'security'" class="settings-card-grid">
@@ -805,7 +811,7 @@ onBeforeUnmount(() => {
     <section v-else-if="selectedProfileId === 'preferences'" class="settings-card-grid">
       <article class="settings-card">
         <header class="settings-card-head">
-          <h3>工作状态</h3>
+          <h3>在线状态</h3>
         </header>
         <div class="settings-density-row">
           <button
@@ -957,3 +963,23 @@ onBeforeUnmount(() => {
   </div>
 </AppDialog>
 </template>
+
+<style scoped>
+.settings-dashboard { overflow-y: auto; background-color: var(--surface-canvas); background-image: var(--canvas-backdrop); }
+.personal-center-head { position: relative; overflow: hidden; min-height: 10rem; padding: var(--space-24); border-color: var(--border-accent); border-radius: var(--radius-20); background-color: var(--surface-panel); background-image: linear-gradient(90deg, var(--surface-panel) 0%, var(--surface-panel) 38%, color-mix(in srgb, var(--surface-panel) 94%, transparent) 48%, color-mix(in srgb, var(--surface-panel) 64%, transparent) 60%, color-mix(in srgb, var(--surface-panel) 24%, transparent) 72%, transparent 84%), var(--personal-center-background); background-repeat: no-repeat; background-position: center, right center; background-size: 100% 100%, auto 205%; box-shadow: var(--shadow-md); }
+.personal-center-head > * { position: relative; z-index: 2; }
+.personal-avatar-frame { position: relative; display: inline-grid; flex: 0 0 auto; place-items: center; }
+.personal-avatar-frame > img { position: absolute; right: -1rem; bottom: -.85rem; width: 3.25rem; height: 3.25rem; object-fit: contain; filter: drop-shadow(0 .35rem .55rem color-mix(in srgb, var(--primary-800) 14%, transparent)); pointer-events: none; }
+.personal-center-title h3 { font-family: var(--font-family-display); font-size: var(--text-title); }
+.personal-center-badges { display: flex; flex-wrap: wrap; gap: var(--space-6); margin-top: var(--space-8); }
+.personal-center-badges > span { display: inline-flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-8); border: 1px solid var(--border-default); border-radius: 999px; background: var(--surface-glass); color: var(--text-secondary); font-size: var(--text-caption); font-weight: 700; }
+.personal-status-card { position: relative; overflow: hidden; min-height: 13rem; border-radius: var(--radius-16); background: linear-gradient(155deg, var(--surface-panel) 78%, color-mix(in srgb, var(--surface-accent) 48%, var(--surface-panel))); transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base); }
+.personal-status-card::after { position: absolute; right: -2.5rem; bottom: -3rem; width: 7rem; height: 7rem; border-radius: 50%; background: color-mix(in srgb, var(--surface-accent) 72%, transparent); content: ''; }
+.personal-status-card:hover { border-color: var(--border-accent); box-shadow: var(--shadow-md); transform: translateY(-.12rem); }
+.personal-status-art { position: absolute; z-index: 0; top: -.25rem; right: -.1rem; width: 8rem; height: 8rem; object-fit: contain; opacity: .56; filter: drop-shadow(0 .45rem .7rem color-mix(in srgb, var(--primary-800) 10%, transparent)); pointer-events: none; }
+.personal-status-card > :not(.personal-status-art) { position: relative; z-index: 1; }
+.personal-status-card header span { display: inline-flex; align-items: center; gap: var(--space-6); color: var(--text-accent); }
+.personal-status-card footer button { min-height: 2.5rem; border-radius: var(--radius-10); background: var(--surface-panel); box-shadow: var(--shadow-sm); }
+.settings-card { border-radius: var(--radius-16); box-shadow: var(--shadow-sm); }
+@media (max-width: 640px) { .settings-dashboard { padding: var(--space-12); padding-bottom: 7rem; }.personal-center-head { grid-template-columns: auto minmax(0, 1fr); padding: var(--space-18); background-image: linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent) 0%, color-mix(in srgb, var(--surface-panel) 90%, transparent) 58%, color-mix(in srgb, var(--surface-panel) 36%, transparent) 100%), var(--personal-center-background); background-position: center, right bottom; background-size: 100% 100%, auto 72%; }.personal-center-actions { grid-column: 1 / -1; justify-content: stretch; }.personal-center-actions :deep(.ui-button) { width: 100%; }.personal-status-grid { grid-template-columns: 1fr; } }
+</style>

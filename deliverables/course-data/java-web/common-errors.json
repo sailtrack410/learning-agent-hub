@@ -1,0 +1,16 @@
+[
+  { "id": "ERR-001", "knowledgePoint": "HTTP", "error": "使用 GET 创建或修改资源", "cause": "只关注接口能否调用，忽略方法语义和缓存影响", "correction": "对照 GET、POST、PUT、DELETE 的安全性和幂等语义重写接口" },
+  { "id": "ERR-002", "knowledgePoint": "HTTP", "error": "把业务校验失败统一返回 500", "cause": "没有区分客户端输入、业务冲突和系统异常", "correction": "使用 400、403、404、409 等状态并返回稳定错误码" },
+  { "id": "ERR-003", "knowledgePoint": "SERVLET", "error": "把当前用户或请求参数保存在 Servlet 实例字段", "cause": "不了解 Servlet 实例会被并发请求共享", "correction": "把单次请求状态保存在局部变量或请求作用域" },
+  { "id": "ERR-004", "knowledgePoint": "SPRING_IOC", "error": "大量使用字段注入且依赖可为空", "cause": "没有把必需依赖作为对象完整性的组成部分", "correction": "使用构造器注入并保持依赖不可变" },
+  { "id": "ERR-005", "knowledgePoint": "SPRING_BOOT", "error": "把环境密码和模型密钥写进 application.yml", "cause": "把本地可运行误认为可部署", "correction": "改用环境变量和部署配置模板，提交前轮换测试密钥" },
+  { "id": "ERR-006", "knowledgePoint": "REST", "error": "URI 使用 /getCourse 或 /deleteCourse 动词", "cause": "按方法调用设计接口而不是按资源设计", "correction": "使用 /courses/{id}，由 HTTP 方法表达动作" },
+  { "id": "ERR-007", "knowledgePoint": "VALIDATION", "error": "只在前端校验必填和长度", "cause": "忽略请求可绕过前端直接调用", "correction": "Controller 使用 Bean Validation，Service 校验业务状态" },
+  { "id": "ERR-008", "knowledgePoint": "MYBATIS", "error": "用字符串拼接用户输入形成 SQL", "cause": "混淆参数绑定与动态 SQL 片段", "correction": "普通值使用参数占位符，动态列名使用白名单" },
+  { "id": "ERR-009", "knowledgePoint": "TRANSACTION", "error": "多表写入没有事务或异常被吞掉", "cause": "只验证成功路径，没有考虑部分失败", "correction": "在 Service 建立事务边界并让异常触发回滚" },
+  { "id": "ERR-010", "knowledgePoint": "AUTHN", "error": "使用明文或快速哈希保存密码", "cause": "不了解离线破解风险", "correction": "使用 BCrypt 等专用慢哈希并限制登录尝试" },
+  { "id": "ERR-011", "knowledgePoint": "AUTHZ", "error": "只隐藏前端按钮，不做后端数据权限", "cause": "把界面可见性误认为访问控制", "correction": "接口校验角色、操作权限和资源归属，并测试横向越权" },
+  { "id": "ERR-012", "knowledgePoint": "UNIT_TEST", "error": "单元测试只断言方法被调用", "cause": "没有验证业务结果、边界和副作用", "correction": "断言状态变化、返回值、异常和禁止发生的写入" },
+  { "id": "ERR-013", "knowledgePoint": "INTEGRATION_TEST", "error": "集成测试连接开发数据库并清理数据", "cause": "测试库隔离不足", "correction": "使用独立测试库、事务回滚和可重复夹具" },
+  { "id": "ERR-014", "knowledgePoint": "DEPLOY", "error": "发布后只看进程存在，不做健康与关键接口检查", "cause": "缺少可执行发布清单", "correction": "验证迁移、健康检查、关键 API、前端资源、日志和回滚条件" }
+]

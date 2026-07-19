@@ -228,7 +228,7 @@ class ModuleOrgApiIntegrationTest extends LocalIntegrationTestSupport {
                 .cookie(adminSession))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.code").value(100403))
-            .andExpect(jsonPath("$.message", containsString("员工身份")));
+            .andExpect(jsonPath("$.message", containsString("学生或教师身份")));
 
         mockMvc.perform(get("/api/admin/users")
                 .cookie(adminSession)

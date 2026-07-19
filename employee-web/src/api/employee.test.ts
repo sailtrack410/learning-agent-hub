@@ -26,6 +26,147 @@ function createSpyClient() {
 }
 
 describe('createEmployeeApi', () => {
+  it('maps student profile dialogue and correction endpoints', async () => {
+    const { client, calls } = createSpyClient();
+    const api = createEmployeeApi(client);
+
+    await api.studentProfile.current();
+    await api.studentProfile.answer('我更喜欢通过代码案例学习。');
+    await api.studentProfile.correct('RESOURCE_PREFERENCE', '我更喜欢短视频配合代码实操。');
+
+    expect(calls).toEqual([
+      ['get', '/api/employee/student/profile', undefined],
+      ['post', '/api/employee/student/profile/messages', { message: '我更喜欢通过代码案例学习。' }],
+      ['put', '/api/employee/student/profile/dimensions/RESOURCE_PREFERENCE', { conclusion: '我更喜欢短视频配合代码实操。' }],
+    ]);
+  });
+
+  it('maps published course endpoints', async () => {
+    const { client, calls } = createSpyClient();
+    const api = createEmployeeApi(client);
+
+    await api.courses.list();
+    await api.courses.detail('8100001');
+    await api.courses.enroll('8100001');
+    await api.courses.assessments('8100001');
+    await api.courses.assessmentDetail('8100001', '8500001');
+    await api.courses.submitAssessment('8100001', '8500001', {
+      idempotencyKey: 'attempt-1',
+      durationSeconds: 30,
+      answers: [{ questionId: '8510001', selectedValues: ['B'], durationSeconds: 30 }],
+    });
+    await api.courses.learningPath('8100001');
+    await api.courses.completeLearningPathNode('8100001', '8700001');
+
+    expect(calls).toEqual([
+      ['get', '/api/employee/courses', undefined],
+      ['get', '/api/employee/courses/8100001', undefined],
+      ['post', '/api/employee/courses/8100001/enrollment', undefined],
+      ['get', '/api/employee/courses/8100001/assessments', undefined],
+      ['get', '/api/employee/courses/8100001/assessments/8500001', undefined],
+      ['post', '/api/employee/courses/8100001/assessments/8500001/attempts', {
+        idempotencyKey: 'attempt-1',
+        durationSeconds: 30,
+        answers: [{ questionId: '8510001', selectedValues: ['B'], durationSeconds: 30 }],
+      }],
+      ['get', '/api/employee/courses/8100001/learning-path', undefined],
+      ['post', '/api/employee/courses/8100001/learning-path/nodes/8700001/complete', undefined],
+    ]);
+    expect(api.courses.resourcePreviewUrl('8200001')).toBe('/api/employee/courses/resources/8200001/preview');
+  });
+
+  it('maps teacher course management endpoints', async () => {
+    const { client, calls } = createSpyClient();
+    const api = createEmployeeApi(client);
+
+    await api.teacherCourses.list();
+    await api.teacherCourses.learningOverview('8100001');
+    await api.teacherCourses.startStudentConversation('8100001', '8220002');
+    await api.teacherCourses.openClassGroup('8100001', '8200002');
+    await api.teacherCourses.saveOutline('8100001', { chapters: [], dependencies: [] });
+    await api.teacherCourses.saveArticle('8100001', '8110001', { title: 'Servlet', contentJson: '{"type":"doc","content":[]}', status: 'DRAFT' });
+    await api.teacherCourses.prepareResourcePreview('8100001', '8200001');
+    await api.teacherCourses.resourcePreviewStatus('8100001', '8200001');
+    await api.teacherCourses.knowledgeDocuments('8100001');
+    await api.teacherCourses.addKnowledgeDocument('8100001', { attachmentRefId: '8200001', chapterId: '8110001', knowledgePointIds: ['8120001'] });
+    await api.teacherCourses.retryKnowledgeDocument('8100001', '8300001');
+    await api.teacherCourses.createInvitation('8100001');
+    await api.teacherCourses.acceptInvitation('invite-token');
+    await api.teacherCourses.remove('8100001');
+
+    expect(calls).toEqual([
+      ['get', '/api/employee/teacher/courses', undefined],
+      ['get', '/api/employee/teacher/courses/8100001/learning-overview', undefined],
+      ['post', '/api/employee/teacher/courses/8100001/students/8220002/private-conversation', undefined],
+      ['post', '/api/employee/teacher/courses/8100001/classes/8200002/conversation', undefined],
+      ['put', '/api/employee/teacher/courses/8100001/outline', { chapters: [], dependencies: [] }],
+      ['put', '/api/employee/teacher/courses/8100001/chapters/8110001/article', { title: 'Servlet', contentJson: '{"type":"doc","content":[]}', status: 'DRAFT' }],
+      ['post', '/api/employee/teacher/courses/8100001/resources/8200001/preview', undefined],
+      ['get', '/api/employee/teacher/courses/8100001/resources/8200001/preview-status', undefined],
+      ['get', '/api/employee/teacher/courses/8100001/knowledge-documents', undefined],
+      ['post', '/api/employee/teacher/courses/8100001/knowledge-documents', { attachmentRefId: '8200001', chapterId: '8110001', knowledgePointIds: ['8120001'] }],
+      ['post', '/api/employee/teacher/courses/8100001/knowledge-documents/8300001/retry', undefined],
+      ['post', '/api/employee/teacher/courses/8100001/invitations', undefined],
+      ['post', '/api/employee/teacher/courses/invitations/accept', { token: 'invite-token' }],
+      ['delete', '/api/employee/teacher/courses/8100001', undefined],
+    ]);
+  });
+
+  it('maps student generation and teacher resource governance endpoints', async () => {
+    const { client, calls } = createSpyClient();
+    const api = createEmployeeApi(client);
+
+    await api.learningResources.tasks('8100001');
+    await api.learningResources.createTask({
+      courseId: '8100001',
+      knowledgePointId: '8120001',
+      idempotencyKey: 'resource-task-1',
+      requestMessage: '结合代码案例学习',
+    });
+    await api.learningResources.retryTask('8800001');
+    await api.learningResources.list({ courseId: '8100001', resourceType: 'CODE_LAB' });
+    await api.learningResources.recordView('8810001');
+    await api.learningResources.feedback('8810001');
+    await api.learningResources.saveFeedback('8810001', 'TOO_DIFFICULT', '需要更基础的示例');
+    await api.teacherLearningResources.tasks({ courseId: '8100001', status: 'RUNNING' });
+    await api.teacherLearningResources.list({ courseId: '8100001', status: 'DRAFT' });
+    await api.teacherLearningResources.update('8810001', { title: '标题', summary: '摘要', content: '正文' });
+    await api.teacherLearningResources.review('8810001', 'APPROVE', '引用一致');
+    await api.teacherLearningResources.publish('8810001');
+    await api.teacherLearningResources.withdraw('8810001');
+    await api.teacherLearningResources.push('8810001', 'CLASS', '9100001');
+
+    expect(calls).toEqual([
+      ['get', '/api/employee/learning-resources/tasks', { query: { courseId: '8100001' } }],
+      ['post', '/api/employee/learning-resources/tasks', {
+        courseId: '8100001', knowledgePointId: '8120001', idempotencyKey: 'resource-task-1', requestMessage: '结合代码案例学习',
+      }],
+      ['post', '/api/employee/learning-resources/tasks/8800001/retry', undefined],
+      ['get', '/api/employee/learning-resources', { query: { courseId: '8100001', resourceType: 'CODE_LAB' } }],
+      ['post', '/api/employee/learning-resources/8810001/view', undefined],
+      ['get', '/api/employee/learning-resources/8810001/feedback', undefined],
+      ['post', '/api/employee/learning-resources/8810001/feedback', { feedbackType: 'TOO_DIFFICULT', comment: '需要更基础的示例' }],
+      ['get', '/api/employee/teacher/learning-resources/tasks', { query: { courseId: '8100001', status: 'RUNNING' } }],
+      ['get', '/api/employee/teacher/learning-resources', { query: { courseId: '8100001', status: 'DRAFT' } }],
+      ['put', '/api/employee/teacher/learning-resources/8810001', { title: '标题', summary: '摘要', content: '正文' }],
+      ['post', '/api/employee/teacher/learning-resources/8810001/review', { decision: 'APPROVE', note: '引用一致' }],
+      ['post', '/api/employee/teacher/learning-resources/8810001/publish', undefined],
+      ['post', '/api/employee/teacher/learning-resources/8810001/withdraw', undefined],
+      ['post', '/api/employee/teacher/learning-resources/8810001/pushes', { targetType: 'CLASS', targetId: '9100001' }],
+    ]);
+  });
+
+  it('maps student learning dashboard endpoint', async () => {
+    const { client, calls } = createSpyClient();
+    const api = createEmployeeApi(client);
+
+    await api.studentDashboard.current();
+
+    expect(calls).toEqual([
+      ['get', '/api/employee/student/learning-dashboard', undefined],
+    ]);
+  });
+
   it('maps auth endpoints to backend employee auth controller', async () => {
     const { client, calls } = createSpyClient();
     const api = createEmployeeApi(client);

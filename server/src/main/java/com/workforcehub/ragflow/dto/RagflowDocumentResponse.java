@@ -21,6 +21,9 @@ public class RagflowDocumentResponse {
     private Long latestIngestJobId;
     private String ingestJobStatus;
     private String ingestJobStatusName;
+    private Integer ingestProgressPercent;
+    private String ingestStage;
+    private String ingestStageName;
     private String vectorStatus;
     private String vectorStatusName;
     private Integer chunkCount;

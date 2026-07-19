@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const source = readFileSync(fileURLToPath(new URL('./RagflowView.vue', import.meta.url)), 'utf8');
 const uploadDialogSource = readFileSync(fileURLToPath(new URL('../components/ragflow/RagflowUploadDialog.vue', import.meta.url)), 'utf8');
 const settingsDialogSource = readFileSync(fileURLToPath(new URL('../components/ragflow/RagflowSettingsDialog.vue', import.meta.url)), 'utf8');
+const detailPanelSource = readFileSync(fileURLToPath(new URL('../components/ragflow/RagflowDetailPanel.vue', import.meta.url)), 'utf8');
 
 describe('RagflowView', () => {
   it('supports a multi-file upload queue', () => {
@@ -19,6 +20,13 @@ describe('RagflowView', () => {
     expect(source).toContain('uploadVisible.value = false');
     expect(source).toContain('正在后台入库');
     expect(source).not.toContain('window.setTimeout(resolve, 600)');
+  });
+
+  it('polls persisted ingest tasks and displays their current stage and progress', () => {
+    expect(source).toContain('scheduleDocumentPoll()');
+    expect(source).toContain("document.ingestStatus === 'PENDING' || document.ingestStatus === 'RUNNING'");
+    expect(detailPanelSource).toContain('row.ingestStageName');
+    expect(detailPanelSource).toContain('row.ingestProgressPercent');
   });
 
   it('uses browser upload progress events for ticket target uploads', () => {

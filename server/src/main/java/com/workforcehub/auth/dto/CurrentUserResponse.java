@@ -15,6 +15,7 @@ public class CurrentUserResponse {
     private String email;
     private List<String> roleCodes;
     private List<String> permissionCodes;
+    private String educationRole;
 
     /**
      * 业务用户的部门ID（仅 USER 类型）

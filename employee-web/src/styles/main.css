@@ -20,7 +20,9 @@ body {
   margin: 0;
   min-width: 320px;
   overflow-x: hidden;
-  background: var(--surface-canvas);
+  background-color: var(--surface-canvas);
+  background-image: var(--canvas-backdrop);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-family-body);
   text-rendering: optimizeLegibility;
@@ -37,7 +39,7 @@ select {
 
 button {
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: color var(--transition-base), background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base), opacity var(--transition-base);
 }
 
 button:disabled {
@@ -59,9 +61,11 @@ select:focus-visible {
 input,
 textarea,
 select {
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-8);
   padding: var(--space-8) var(--space-12);
+  background: var(--surface-panel);
+  color: var(--text-primary);
 }
 
 h1,
@@ -89,6 +93,22 @@ svg {
 
 ::selection {
   background: color-mix(in srgb, var(--primary-200) 72%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 0.18rem solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-tertiary) 42%, transparent);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

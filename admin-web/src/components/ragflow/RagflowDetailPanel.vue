@@ -81,7 +81,7 @@ function visibilityLabel(value?: string | null) {
     PRIVATE: '私有',
     ROLE: '按角色',
     DEPARTMENT: '按部门',
-    POSITION: '按岗位',
+    POSITION: '按课程角色',
     PUBLIC: '全员可查阅',
   };
   return value ? labels[value] ?? '未知范围' : '-';
@@ -154,6 +154,12 @@ function parserTypeLabel(value?: string | null) {
         <template #cell-ingestStatus="{ row }">
           <span class="status-pill">{{ row.ingestStatusName || statusLabel(row.ingestStatus) }}</span>
           <small v-if="row.errorMessage" class="cell-note error-text">{{ safeBusinessMessage(row.errorMessage) }}</small>
+        </template>
+        <template #cell-ingestProgress="{ row }">
+          <div class="ingest-progress-cell">
+            <span>{{ row.ingestStageName || '等待处理' }} · {{ row.ingestProgressPercent ?? 0 }}%</span>
+            <progress :value="row.ingestProgressPercent ?? 0" max="100" />
+          </div>
         </template>
         <template #cell-vectorStatus="{ row }">
           <span class="status-pill">{{ row.vectorStatusName || statusLabel(row.vectorStatus || 'PENDING') }}</span>

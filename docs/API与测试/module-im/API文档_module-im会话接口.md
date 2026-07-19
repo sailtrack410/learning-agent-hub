@@ -110,7 +110,7 @@ http://127.0.0.1:18080/v1/chat/completions
 | `conversationId` | `number` | 会话 ID |
 | `conversationType` | `string` | `PRIVATE`、`GROUP`、`AGENT` |
 | `conversationKey` | `string/null` | 服务端唯一键；前端只读 |
-| `title` | `string/null` | 会话标题 |
+| `title` | `string/null` | 会话标题；私聊按当前员工返回对方姓名，群聊和 Agent 会话返回会话名称 |
 | `avatarFileId` | `number/null` | 头像文件 ID，当前可为空 |
 | `boundAgentId` | `number/null` | Agent 会话绑定的 Agent ID |
 | `lastMessageSeq` | `number` | 会话最后消息序号 |
@@ -130,7 +130,7 @@ http://127.0.0.1:18080/v1/chat/completions
   "conversationId": 7001,
   "conversationType": "PRIVATE",
   "conversationKey": "PRIVATE:2002:2003",
-  "title": "张三与李四",
+  "title": "李四",
   "avatarFileId": null,
   "boundAgentId": null,
   "lastMessageSeq": 2,
@@ -239,6 +239,7 @@ http://127.0.0.1:18080/v1/chat/completions
 - `beforeLastMessageAt` 和 `beforeConversationId` 必须同时传或同时不传。
 - `size <= 0` 返回 `code=400`、`message=分页大小必须大于0`。
 - 列表只返回当前员工活跃参与的会话。
+- 私聊 `title` 仅返回对方姓名，不包含当前员工姓名；同一会话的双方会得到不同标题。
 - 排序规则为当前员工私有置顶优先，然后按 `lastMessageAt` 倒序、`conversationId` 倒序。
 - 游标翻页会带入游标会话的置顶状态，前端继续只需要传 `beforeLastMessageAt + beforeConversationId`。
 
@@ -252,7 +253,7 @@ http://127.0.0.1:18080/v1/chat/completions
     {
       "conversationId": 7001,
       "conversationType": "PRIVATE",
-      "title": "张三与李四",
+      "title": "李四",
       "lastMessageSeq": 2,
       "lastReadSeq": 1,
       "unreadCount": 1,
@@ -278,6 +279,7 @@ http://127.0.0.1:18080/v1/chat/completions
 - 非成员访问已有会话返回 `code=403`、`message=无权访问该会话`。
 - 会话不存在返回 `code=404`、`message=会话不存在`。
 - 群聊返回 `groupProfile`，私聊和 Agent 会话该字段为 `null`。
+- 私聊详情中的 `conversation.title` 与列表规则一致，仅返回对方姓名。
 - 成员展示名由后端直接返回；如果历史成员关联用户或 Agent 被软删除，`displayName` 会降级为 `USER:{memberId}` 或 `AGENT:{memberId}`，前端不需要再兜底展示空字符串。
 
 ### 5.3 发起私聊
@@ -299,6 +301,7 @@ http://127.0.0.1:18080/v1/chat/completions
 - 不能和自己发起私聊。
 - 仅允许直属上级、直属下级或同群成员之间发起私聊。
 - 两人私聊会话具备幂等效果；重复发起返回同一个活跃会话。
+- 返回的 `title` 为目标用户姓名，不拼接当前员工姓名。
 
 ### 5.4 创建自定义群聊
 

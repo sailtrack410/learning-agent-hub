@@ -46,8 +46,8 @@ async function submitLogin() {
   <main class="login-page">
     <section class="login-panel">
       <div>
-        <p class="eyebrow">workforce hub</p>
-        <h1>管理端登录</h1>
+        <p class="eyebrow">智能学习平台</p>
+        <h1>运营管理端登录</h1>
       </div>
 
       <form class="login-form" @submit.prevent="submitLogin">

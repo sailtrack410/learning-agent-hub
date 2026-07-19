@@ -72,6 +72,7 @@ const providerOptions = [
   { value: 'qwen', label: '通义千问', endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
   { value: 'doubao', label: '豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3' },
   { value: 'siliconflow', label: '硅基流动', endpoint: 'https://api.siliconflow.cn/v1' },
+  { value: 'xfyun', label: '科大讯飞星火', endpoint: 'https://spark-api-open.xf-yun.com/v1' },
   { value: 'mimo', label: 'MiMo', endpoint: 'https://api.xiaomimimo.com/v1' },
   { value: 'openai-compatible', label: '兼容接入', endpoint: '' },
 ];
@@ -796,7 +797,7 @@ onMounted(async () => {
     </section>
 
     <section v-else-if="aiTab === 'defaults'" class="model-workspace">
-      <AdminPanel title="默认模型">
+      <AdminPanel title="默认模型" subtitle="启用的默认文本模型会用于画像分析、路径规划、内容生成、练习生成和事实校验；未设置时回退部署环境配置。">
         <div class="default-grid">
           <div v-for="type in modelTypeOptions" :key="type.value" class="default-item">
             <span>{{ type.label }}</span>

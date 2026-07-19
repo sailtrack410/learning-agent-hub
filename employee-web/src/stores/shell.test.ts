@@ -237,17 +237,30 @@ describe('useShellStore', () => {
   it('labels the workbench section consistently', () => {
     const workbenchNav = navItems.find((item) => item.id === 'workbench');
 
-    expect(workbenchNav?.label).toBe('工作台');
+    expect(workbenchNav).toBeUndefined();
     expect(sectionMeta.workbench.title).toBe('工作台');
   });
 
-  it('labels the files section as cloud space', () => {
+  it('exposes separate learning resources and cloud space entries', () => {
     const shell = useShellStore();
+    const todosNav = navItems.find((item) => item.id === 'todos');
+    const resourcesNav = navItems.find((item) => item.id === 'resources');
     const filesNav = navItems.find((item) => item.id === 'files');
 
+    expect(todosNav?.label).toBe('待办');
+    expect(resourcesNav?.label).toBe('学习资料');
+    expect(sectionMeta.resources.title).toBe('学习资料');
     expect(filesNav?.label).toBe('云空间');
     expect(sectionMeta.files.title).toBe('云空间');
+    expect(sectionMeta.files.primaryAction?.label).toBe('上传文件');
     expect(shell.activeFile.title).toBe('云空间');
+  });
+
+  it('exposes the student learning profile entry', () => {
+    const profileNav = navItems.find((item) => item.id === 'profile');
+
+    expect(profileNav?.label).toBe('学习画像');
+    expect(sectionMeta.profile.title).toBe('学习画像');
   });
 
   it('filters message conversations by title and member keyword', () => {
@@ -671,13 +684,13 @@ describe('useShellStore', () => {
   it('finds profile center entries by real field and action keywords', () => {
     const shell = useShellStore();
 
-    shell.setSearch('settings', '入职日期');
+    shell.setSearch('settings', '课程角色');
     expect(shell.filteredProfile.map((item) => item.id)).toContain('profile');
 
     shell.setSearch('settings', '修改密码');
     expect(shell.filteredProfile.map((item) => item.id)).toContain('security');
 
-    shell.setSearch('settings', '直属上级');
+    shell.setSearch('settings', '所属班级');
     expect(shell.filteredProfile.map((item) => item.id)).toContain('organization');
 
     shell.setSearch('settings', '在线状态');

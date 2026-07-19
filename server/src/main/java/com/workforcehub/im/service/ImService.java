@@ -161,8 +161,17 @@ public class ImService {
     // 私聊发起：同一对用户只会创建一个会话，重复发起返回已有会话
     @Transactional(rollbackFor = Exception.class)
     public ImConversationSummaryResponse startCurrentEmployeePrivateConversation(StartPrivateConversationRequest request) {
+        return startCurrentEmployeePrivateConversation(request.getTargetUserId(), false);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ImConversationSummaryResponse startCurrentEmployeeCoursePrivateConversation(Long targetUserId) {
+        return startCurrentEmployeePrivateConversation(targetUserId, true);
+    }
+
+    private ImConversationSummaryResponse startCurrentEmployeePrivateConversation(Long targetUserId,
+                                                                                    boolean courseRelationVerified) {
         Long currentUserId = requireActiveEmployeeUserId();
-        Long targetUserId = request.getTargetUserId();
         if (currentUserId.equals(targetUserId)) {
             throw new BizException(400, "不能和自己发起私聊");
         }
@@ -172,7 +181,8 @@ public class ImService {
             .orElseThrow(() -> new BizException(403, "当前员工不可发起私聊"));
         ImUserRelationRow targetUser = imRepository.findActiveOrgUser(targetUserId)
             .orElseThrow(() -> new BizException(404, "目标用户不存在"));
-        if (!hasDirectManagerRelation(currentUser, targetUser)
+        if (!courseRelationVerified
+            && !hasDirectManagerRelation(currentUser, targetUser)
             && !imRepository.existsSharedActiveGroupMembership(currentUserId, targetUserId)) {
             throw new BizException(403, "只能和直属上级、直属下级或同群成员发起私聊");
         }
@@ -180,7 +190,8 @@ public class ImService {
         // 用 conversationKey 保证同一对用户只有一个私聊会话
         String conversationKey = privateConversationKey(currentUserId, targetUserId);
         Long conversationId = imRepository.findActiveConversationIdByKey(conversationKey)
-            .orElseGet(() -> createPrivateConversation(currentUser, targetUser, conversationKey));
+            .orElseGet(() -> createPrivateConversation(currentUser, targetUser, conversationKey,
+                courseRelationVerified ? "COURSE_MEMBER" : "DIRECT_RELATION"));
 
         return imRepository.findConversationSummaryForUser(conversationId, currentUserId)
             .map(this::toConversationSummaryResponse)
@@ -669,7 +680,8 @@ public class ImService {
 
     private Long createPrivateConversation(ImUserRelationRow currentUser,
                                            ImUserRelationRow targetUser,
-                                           String conversationKey) {
+                                           String conversationKey,
+                                           String joinSource) {
         Long conversationId = IdGenerator.nextId();
         String title = privateConversationTitle(currentUser, targetUser);
         boolean inserted = imRepository.tryInsertPrivateConversation(
@@ -683,8 +695,8 @@ public class ImService {
                 .orElseThrow(() -> new BizException(409, "私聊会话创建冲突"));
         }
         try {
-            imRepository.insertUserMember(IdGenerator.nextId(), conversationId, currentUser.userId(), "MEMBER", "DIRECT_RELATION");
-            imRepository.insertUserMember(IdGenerator.nextId(), conversationId, targetUser.userId(), "MEMBER", "DIRECT_RELATION");
+            imRepository.insertUserMember(IdGenerator.nextId(), conversationId, currentUser.userId(), "MEMBER", joinSource);
+            imRepository.insertUserMember(IdGenerator.nextId(), conversationId, targetUser.userId(), "MEMBER", joinSource);
         } catch (DuplicateKeyException e) {
             return imRepository.findActiveConversationIdByKey(conversationKey)
                 .orElseThrow(() -> new BizException(409, "私聊成员写入冲突"));

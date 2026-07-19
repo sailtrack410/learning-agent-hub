@@ -10,7 +10,11 @@ RUN mvn -q -DskipTests package
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
-RUN addgroup -S app && adduser -S app -G app && mkdir -p /app/storage && chown -R app:app /app
+RUN apk add --no-cache libreoffice font-noto-cjk \
+    && addgroup -S app \
+    && adduser -S app -G app \
+    && mkdir -p /app/storage \
+    && chown -R app:app /app
 COPY --from=build /workspace/server/target/workforce-hub-0.1.0-SNAPSHOT.jar /app/workforce-hub.jar
 
 USER app

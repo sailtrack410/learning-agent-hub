@@ -15,6 +15,8 @@ public record RagflowDocumentRow(
     String ingestStatus,
     Long latestIngestJobId,
     String ingestJobStatus,
+    Integer ingestProgressPercent,
+    String ingestStage,
     String vectorStatus,
     Integer chunkCount,
     String errorMessage,

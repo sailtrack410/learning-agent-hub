@@ -67,16 +67,23 @@ public class RagflowIngestService {
             StorageObjectResource object = storageProviderRegistry.require(fileObject.storageProvider())
                 .loadObject(fileObject.bucketName(), fileObject.objectKey());
             byte[] bytes = object.resource().getContentAsByteArray();
+            ragflowRepository.updateIngestProgress(jobId, 15, "PARSE_CONTENT");
             String text = parseText(bytes, title, mimeType, parserType);
+            ragflowRepository.updateIngestProgress(jobId, 35, "SPLIT_CHUNKS");
             List<String> chunks = splitChunks(text, config);
             if (chunks.isEmpty()) {
                 throw new BizException(422, "未解析出可入库内容");
             }
             vectorRepository.requireAvailable();
+            ragflowRepository.updateIngestProgress(jobId, 50, "VECTORIZE");
             List<List<Double>> embeddings = embeddingClient.embed(chunks, config.embeddingModelId(), config.embeddingDimension());
+            ragflowRepository.updateIngestProgress(jobId, 75, "WRITE_VECTOR");
             List<Long> vectorIds = vectorRepository.replaceDocumentVectors(spaceId, documentId, jobId, chunks, embeddings);
-            ragflowRepository.replaceChunks(spaceId, documentId, jobId, chunks, vectorIds);
-            ragflowRepository.markIngestSuccess(documentId, jobId, text, chunks.size());
+            ragflowRepository.updateIngestProgress(jobId, 90, "COMMIT_INDEX");
+            if (!ragflowRepository.completeIngestIfActive(spaceId, documentId, jobId, text, chunks, vectorIds)) {
+                vectorRepository.deactivateDocumentVectors(documentId);
+                return;
+            }
             ragflowRepository.refreshSpaceCounts(spaceId);
         } catch (Exception | LinkageError e) {
             String message = e instanceof BizException ? e.getMessage() : "文件解析失败";

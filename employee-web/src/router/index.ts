@@ -1,24 +1,59 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
+import { useSessionStore } from '@/stores/session';
 
 const MessagesView = () => import('@/views/MessagesView.vue');
 const MessagesSection = () => import('@/views/sections/MessagesSection.vue');
-const TodosSection = () => import('@/views/sections/TodosSection.vue');
-const WorkbenchSection = () => import('@/views/sections/WorkbenchSection.vue');
+const EducationResourcesSection = () => import('@/views/sections/EducationResourcesSection.vue');
 const FilesSection = () => import('@/views/sections/FilesSection.vue');
-const ContactsSection = () => import('@/views/sections/ContactsSection.vue');
+const TodosSection = () => import('@/views/sections/TodosSection.vue');
 const AgentsSection = () => import('@/views/sections/AgentsSection.vue');
 const SettingsSection = () => import('@/views/sections/SettingsSection.vue');
+const CoursesSection = () => import('@/views/sections/CoursesSection.vue');
+const StudentProfileSection = () => import('@/views/sections/StudentProfileSection.vue');
+const CourseLearningPathView = () => import('@/views/CourseLearningPathView.vue');
+const StudentLearningResourcesView = () => import('@/views/StudentLearningResourcesView.vue');
+const CourseArticleEditor = () => import('@/views/CourseArticleEditor.vue');
 
 export const employeeRoutes = [
   {
     path: '/',
-    redirect: '/messages',
+    redirect: '/courses',
   },
   {
     path: '/',
     component: MessagesView,
     children: [
+      {
+        path: 'courses',
+        name: 'employee-courses',
+        component: CoursesSection,
+        meta: { section: 'courses' },
+      },
+      {
+        path: 'profile',
+        name: 'employee-profile',
+        component: StudentProfileSection,
+        meta: { section: 'profile', educationRole: 'STUDENT' },
+      },
+      {
+        path: 'courses/:courseId/learning-path',
+        name: 'student-course-learning-path',
+        component: CourseLearningPathView,
+        meta: { section: 'courses', educationRole: 'STUDENT' },
+      },
+      {
+        path: 'courses/:courseId/learning-resources',
+        name: 'student-learning-resources',
+        component: StudentLearningResourcesView,
+        meta: { section: 'courses', educationRole: 'STUDENT' },
+      },
+      {
+        path: 'courses/:courseId/articles/:chapterId',
+        name: 'teacher-course-article',
+        component: CourseArticleEditor,
+        meta: { section: 'courses', educationRole: 'TEACHER' },
+      },
       {
         path: 'messages',
         name: 'employee-messages',
@@ -44,28 +79,16 @@ export const employeeRoutes = [
         meta: { section: 'todos' },
       },
       {
-        path: 'workbench',
-        name: 'employee-workbench',
-        component: WorkbenchSection,
-        meta: { section: 'workbench' },
-      },
-      {
-        path: 'workbench/:app',
-        name: 'employee-workbench-detail',
-        component: WorkbenchSection,
-        meta: { section: 'workbench' },
+        path: 'resources',
+        name: 'employee-resources',
+        component: EducationResourcesSection,
+        meta: { section: 'resources' },
       },
       {
         path: 'files',
         name: 'employee-files',
         component: FilesSection,
         meta: { section: 'files' },
-      },
-      {
-        path: 'contacts',
-        name: 'employee-contacts',
-        component: ContactsSection,
-        meta: { section: 'contacts' },
       },
       {
         path: 'agents',
@@ -87,24 +110,32 @@ export const employeeRoutes = [
       },
       {
         path: 'processes',
-        redirect: '/messages',
+        redirect: '/courses',
       },
       {
         path: 'reports',
-        redirect: '/messages',
+        redirect: '/courses',
       },
     ],
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/messages',
+    redirect: '/courses',
   },
 ] satisfies RouteRecordRaw[];
 
-// employee-web 没有路由守卫，认证逻辑在 MessagesView.vue 的 onMounted 中处理
 const router = createRouter({
   history: createWebHashHistory(),
   routes: employeeRoutes,
+});
+
+router.beforeEach(async (to) => {
+  const session = useSessionStore();
+  if (!session.initialized) await session.loadCurrentUser();
+  if (!session.isAuthenticated) return true;
+  const requiredRole = to.meta.educationRole;
+  if (typeof requiredRole === 'string' && session.educationRole !== requiredRole) return '/courses';
+  return true;
 });
 
 export default router;

@@ -57,6 +57,9 @@ export const useSessionStore = defineStore('employee-session', {
     departmentName(state): string {
       return state.profile?.primaryDeptName ?? '';
     },
+    educationRole(state): 'STUDENT' | 'TEACHER' | null {
+      return state.user?.educationRole ?? null;
+    },
   },
   actions: {
     async loadCurrentUser(authApi: EmployeeAuthApi = employeeApi.auth) {

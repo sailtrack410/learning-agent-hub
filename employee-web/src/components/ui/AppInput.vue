@@ -25,15 +25,16 @@ const props = withDefaults(defineProps<{
 <style scoped>
 .ui-input {
   width: 100%;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: var(--space-8) var(--space-12);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-8);
+  border-radius: var(--radius-10);
   background: var(--surface-panel);
   color: var(--text-primary);
   font-family: var(--font-family-body);
   font-size: var(--text-body-md);
-  transition: all 200ms ease;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface-panel) 70%, transparent);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), background-color var(--transition-base);
 }
 
 .ui-input::placeholder {
@@ -41,7 +42,7 @@ const props = withDefaults(defineProps<{
 }
 
 .ui-input:hover:not(:disabled) {
-  border-color: var(--border-default);
+  border-color: var(--border-strong);
 }
 
 .ui-input:focus-visible {

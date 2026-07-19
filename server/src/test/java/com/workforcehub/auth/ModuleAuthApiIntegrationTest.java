@@ -144,6 +144,32 @@ class ModuleAuthApiIntegrationTest extends LocalIntegrationTestSupport {
     }
 
     @Test
+    @DisplayName("同一浏览器应能从管理员会话切换到学生会话")
+    void employeeLoginShouldReplaceExistingAdminSession() throws Exception {
+        Cookie adminSession = login("/api/admin/auth/login", ADMIN_LOGIN_NAME, ADMIN_PASSWORD, "auth-switch-admin-001");
+
+        MvcResult result = mockMvc.perform(post("/api/employee/auth/login")
+                .cookie(adminSession)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "loginName": "%s",
+                      "password": "%s"
+                    }
+                    """.formatted(EMPLOYEE_LOGIN_NAME, EMPLOYEE_PASSWORD)))
+            .andExpect(status().isOk())
+            .andExpect(cookie().exists("SESSION"))
+            .andExpect(jsonPath("$.data.userType").value("USER"))
+            .andReturn();
+
+        Cookie employeeSession = result.getResponse().getCookie("SESSION");
+        assertNotNull(employeeSession);
+        mockMvc.perform(get("/api/employee/auth/me").cookie(employeeSession))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.loginName").value(EMPLOYEE_LOGIN_NAME));
+    }
+
+    @Test
     @DisplayName("未登录访问 me 与 bind 接口应被拒绝")
     void unauthenticatedRequestsShouldBeRejected() throws Exception {
         mockMvc.perform(get("/api/admin/auth/me")

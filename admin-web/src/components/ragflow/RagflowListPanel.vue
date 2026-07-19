@@ -42,7 +42,7 @@ function visibilityLabel(value?: string | null) {
     PRIVATE: '私有',
     ROLE: '按角色',
     DEPARTMENT: '按部门',
-    POSITION: '按岗位',
+    POSITION: '按课程角色',
     PUBLIC: '全员可查阅',
   };
   return value ? labels[value] ?? '未知范围' : '-';

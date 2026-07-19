@@ -106,8 +106,17 @@ workforce:
   auth:
     email-verify:
       enabled: ${AUTH_EMAIL_VERIFY_ENABLED:false}
+    admin-bootstrap:
+      enabled: ${EDUCATION_ADMIN_BOOTSTRAP_ENABLED:false}
+      username: ${EDUCATION_ADMIN_LOGIN:}
+      password: ${EDUCATION_ADMIN_PASSWORD:}
+      display-name: ${EDUCATION_ADMIN_DISPLAY_NAME:教育运营管理员}
   file:
     storage-provider: ${FILE_STORAGE_PROVIDER:LOCAL}
+    preview:
+      libreoffice-command: ${LIBREOFFICE_BIN:soffice}
+      timeout-seconds: ${FILE_PREVIEW_TIMEOUT_SECONDS:120}
+      max-source-bytes: ${FILE_PREVIEW_MAX_SOURCE_BYTES:104857600}
   im:
     websocket:
       allowed-origin-patterns: ${IM_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173}

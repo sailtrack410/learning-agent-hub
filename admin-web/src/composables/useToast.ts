@@ -8,8 +8,7 @@ export interface ToastApi {
 export const toastKey: InjectionKey<ToastApi> = Symbol('toast');
 
 export function useToast(): ToastApi {
-  return inject(toastKey, {
-    error: (msg) => console.error('[toast]', msg),
-    success: (msg) => console.info('[toast]', msg),
-  });
+  const toast = inject(toastKey);
+  if (!toast) throw new Error('Toast 服务未初始化');
+  return toast;
 }

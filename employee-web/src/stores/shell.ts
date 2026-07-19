@@ -32,7 +32,7 @@ import type { KnowledgeAnswerCard } from '@/types/knowledge';
 import { fileSizeLabel, fileTypeLabelFromName } from '@/utils/file-format';
 import { createClientId } from '@/utils/request-id';
 
-export type SectionId = 'messages' | 'todos' | 'files' | 'workbench' | 'processes' | 'contacts' | 'agents' | 'reports' | 'settings';
+export type SectionId = 'courses' | 'profile' | 'messages' | 'todos' | 'resources' | 'files' | 'workbench' | 'processes' | 'contacts' | 'agents' | 'reports' | 'settings';
 export type ContactsViewMode = 'list' | 'tree';
 export type ConversationTone = 'blue' | 'green' | 'amber' | 'red' | 'gray';
 export type SectionFilter = '全部' | '未处理' | 'AI' | '群聊' | '私聊' | '进行中' | '已完成' | '未开始';
@@ -171,6 +171,7 @@ export interface ConversationPanel {
 
 export interface ConversationRecord {
   id: string;
+  conversationKey?: string;
   kind: 'approval' | 'team' | 'agent' | 'attendance' | 'file' | 'private';
   tone: ConversationTone;
   badge: string;
@@ -293,9 +294,21 @@ export interface ContactRecord {
 }
 
 export const sectionMeta: Record<SectionId, SectionMeta> = {
+  courses: {
+    kicker: '',
+    title: '课程',
+    subtitle: '',
+    search: '搜索课程',
+  },
+  profile: {
+    kicker: '',
+    title: '学习画像',
+    subtitle: '',
+    search: '搜索画像维度',
+  },
   messages: {
     kicker: '',
-    title: '消息',
+    title: '学习交流',
     subtitle: '',
     search: '搜索会话',
     secondaryAction: {
@@ -314,6 +327,12 @@ export const sectionMeta: Record<SectionId, SectionMeta> = {
       action: 'switch-section',
       section: 'todos',
     },
+  },
+  resources: {
+    kicker: '',
+    title: '学习资料',
+    subtitle: '',
+    search: '搜索课程与资源',
   },
   files: {
     kicker: '',
@@ -355,7 +374,7 @@ export const sectionMeta: Record<SectionId, SectionMeta> = {
   },
   agents: {
     kicker: '',
-    title: 'AI 助手',
+    title: '学习导师',
     subtitle: '',
     search: '搜索 AI 助手',
   },
@@ -374,12 +393,13 @@ export const sectionMeta: Record<SectionId, SectionMeta> = {
 };
 
 export const navItems: Array<{ id: SectionId; label: string; glyph: string }> = [
+  { id: 'courses', label: '课程', glyph: '课' },
+  { id: 'profile', label: '学习画像', glyph: '像' },
   { id: 'messages', label: '消息', glyph: '息' },
-  { id: 'todos', label: '待办', glyph: '办' },
+  { id: 'todos', label: '待办', glyph: '待' },
+  { id: 'agents', label: '学习导师', glyph: '导' },
+  { id: 'resources', label: '学习资料', glyph: '资' },
   { id: 'files', label: '云空间', glyph: '云' },
-  { id: 'workbench', label: '工作台', glyph: '台' },
-  { id: 'contacts', label: '通讯录', glyph: '录' },
-  { id: 'agents', label: 'AI 助手', glyph: '助' },
   { id: 'settings', label: '个人中心', glyph: '心' },
 ];
 
@@ -389,8 +409,8 @@ export const sectionFilters: SectionFilter[] = ['全部', '未处理', 'AI', '�
 export const todoSectionFilters: SectionFilter[] = ['全部', '进行中', '已完成', '未开始'];
 
 const currentUser = {
-  name: '员工',
-  shortName: '员',
+  name: '用户',
+  shortName: '用',
   loginName: '',
   title: '',
   department: '',
@@ -746,26 +766,26 @@ const profileItems: ProfileRecord[] = [
   {
     id: 'profile',
     title: '个人资料',
-    subtitle: '身份 / 组织 / 账号 / 偏好',
+    subtitle: '学习身份 / 归属 / 账号 / 偏好',
     note: '',
     tone: 'blue',
     stats: [],
     fields: [
-      ['身份状态', '姓名 任职状态 岗位 入职日期'],
-      ['组织状态', '所属部门 直属上级 直属下级'],
+      ['学习身份', '姓名 学生或教师身份 学号或教师编号'],
+      ['学习归属', '学院 班级 课程角色'],
       ['账号状态', '手机号 绑定邮箱 修改密码'],
       ['偏好状态', '在线状态 主题 消息密度'],
     ],
   },
   {
     id: 'organization',
-    title: '组织归属',
-    subtitle: '部门 / 上级 / 下级',
+    title: '学习归属',
+    subtitle: '学院 / 班级 / 平台身份',
     note: '',
     tone: 'green',
     stats: [],
     fields: [
-      ['组织关系', '所属部门 岗位 直属上级 直属下级 组织链路'],
+      ['学习归属', '所属学院 所属班级 学号 教师编号 平台身份'],
     ],
   },
   {
@@ -781,13 +801,13 @@ const profileItems: ProfileRecord[] = [
   },
   {
     id: 'preferences',
-    title: '工作偏好',
+    title: '学习偏好',
     subtitle: '状态 / 外观 / 通知',
     note: '',
     tone: 'gray',
     stats: [],
     fields: [
-      ['偏好设置', '工作状态 通知设置 界面设置 消息样式 在线 忙碌 离开 免打扰'],
+      ['偏好设置', '在线状态 通知设置 界面设置 消息样式 在线 忙碌 离开 免打扰'],
     ],
   },
 ];
@@ -924,8 +944,11 @@ export const useShellStore = defineStore('employee-shell', {
     fontScale: storedPreferences.fontScale,
     bubbleStyle: storedPreferences.bubbleStyle,
     search: {
+      courses: '',
+      profile: '',
       messages: '',
       todos: '',
+      resources: '',
       files: '',
       workbench: '',
       processes: '',
@@ -935,8 +958,11 @@ export const useShellStore = defineStore('employee-shell', {
       settings: '',
     },
     filters: {
+      courses: '全部' as SectionFilter,
+      profile: '全部' as SectionFilter,
       messages: '全部' as SectionFilter,
       todos: '进行中' as SectionFilter,
+      resources: '全部' as SectionFilter,
       files: '全部' as SectionFilter,
       workbench: '全部' as SectionFilter,
       processes: '全部' as SectionFilter,
@@ -946,8 +972,11 @@ export const useShellStore = defineStore('employee-shell', {
       settings: '全部' as SectionFilter,
     },
     active: {
+      courses: '',
+      profile: '',
       messages: '',
       todos: '',
+      resources: '',
       files: 'personal',
       workbench: 'oa',
       processes: 'requests',

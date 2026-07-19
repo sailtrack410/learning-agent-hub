@@ -2,23 +2,26 @@ import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 
 describe('employee router', () => {
-  it('redirects the employee root to the message section', async () => {
+  it('redirects the user root to the course section', async () => {
     const employeeRoutes = await loadEmployeeRoutes();
     const root = employeeRoutes.find((route) => route.path === '/');
 
-    expect(root?.redirect).toBe('/messages');
+    expect(root?.redirect).toBe('/courses');
   });
 
   it.each([
+    ['/courses', 'employee-courses', 'courses'],
+    ['/profile', 'employee-profile', 'profile'],
+    ['/courses/8100001/learning-path', 'student-course-learning-path', 'courses'],
+    ['/courses/8100001/learning-resources', 'student-learning-resources', 'courses'],
+    ['/courses/8100001/articles/8110001', 'teacher-course-article', 'courses'],
     ['/messages', 'employee-messages', 'messages'],
     ['/messages/conv-1001', 'employee-message-detail', 'messages'],
     ['/todos', 'employee-todos', 'todos'],
     ['/todos/todo-1001', 'employee-todo-detail', 'todos'],
-    ['/workbench', 'employee-workbench', 'workbench'],
-    ['/workbench/leave', 'employee-workbench-detail', 'workbench'],
-    ['/workbench/oa', 'employee-workbench-detail', 'workbench'],
+    ['/resources', 'employee-resources', 'resources'],
     ['/files', 'employee-files', 'files'],
-    ['/contacts', 'employee-contacts', 'contacts'],
+    ['/agents', 'employee-agents', 'agents'],
     ['/settings', 'employee-settings', 'settings'],
     ['/settings/security', 'employee-settings-detail', 'settings'],
   ])('resolves %s to a real section route', async (path, name, section) => {
@@ -29,6 +32,11 @@ describe('employee router', () => {
     expect(route?.meta?.section).toBe(section);
   });
 
+  it.each(['/workbench', '/contacts'])('removes the unused office route %s', async (path) => {
+    const employeeRoutes = await loadEmployeeRoutes();
+    expect(findRoute(employeeRoutes, path)?.name).toBeUndefined();
+  });
+
   it('lazy-loads the shell and section components', async () => {
     const employeeRoutes = await loadEmployeeRoutes();
     const shellRoute = employeeRoutes.find((route) => route.children?.length);
@@ -37,6 +45,16 @@ describe('employee router', () => {
     expect(typeof shellRoute?.component).toBe('function');
     expect(sectionRoutes.length).toBeGreaterThan(0);
     expect(sectionRoutes.every((route) => typeof route.component === 'function')).toBe(true);
+  });
+
+  it('marks student and teacher-only routes for role isolation', async () => {
+    const employeeRoutes = await loadEmployeeRoutes();
+
+    expect(findRoute(employeeRoutes, '/profile')?.meta?.educationRole).toBe('STUDENT');
+    expect(findRoute(employeeRoutes, '/courses/8100001/learning-path')?.meta?.educationRole).toBe('STUDENT');
+    expect(findRoute(employeeRoutes, '/courses/8100001/learning-resources')?.meta?.educationRole).toBe('STUDENT');
+    expect(findRoute(employeeRoutes, '/courses/8100001/articles/8110001')?.meta?.educationRole).toBe('TEACHER');
+    expect(findRoute(employeeRoutes, '/courses')?.meta?.educationRole).toBeUndefined();
   });
 });
 

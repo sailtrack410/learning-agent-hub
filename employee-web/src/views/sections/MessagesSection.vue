@@ -153,6 +153,11 @@ const todoCreateOpen = ref(false);
 const mentionProfile = ref<MessageMention | null>(null);
 const mentionActionLoading = ref(false);
 const draftMentionNames = computed(() => mentionsFromText(draft.value).map((item) => `@${item.originalName || item.name}`));
+const activeConversationKindLabel = computed(() => {
+  if (activeConversation.value.kind === 'team') return '课程群';
+  if (activeConversation.value.kind === 'agent') return '学习导师';
+  return '私聊';
+});
 const selectableContacts = computed(() => shell.contacts.filter((item) => (
   item.relation !== '本人' && item.userId !== undefined && item.userId !== null
 )));
@@ -280,9 +285,19 @@ async function sendMentionPrivateMessage() {
       <button class="mobile-back" type="button" aria-label="返回列表" @click="backToList">
         <ChevronLeft :size="22" />
       </button>
+      <AppAvatar
+        class="conversation-head-avatar"
+        :label="activeConversation.title"
+        :image="activeConversation.avatarUrl"
+        :kind="activeConversation.kind === 'agent' ? 'agent' : 'user'"
+        tone="primary"
+        size="md"
+        :status="activeConversation.kind === 'agent' ? 'online' : ''"
+      />
       <div class="workspace-head-text">
         <h2 class="workspace-title">{{ activeConversationTitle }}</h2>
         <div class="workspace-meta-line">
+          <span class="conversation-head-kind">{{ activeConversationKindLabel }}</span>
           <span>{{ activeConversation.meta }}</span>
           <span v-if="activeConversationCurrentStep">{{ activeConversationCurrentStep.label }}</span>
         </div>
@@ -1232,6 +1247,58 @@ async function sendMentionPrivateMessage() {
   text-align: center;
 }
 
+.workspace {
+  background-color: var(--surface-canvas);
+  background-image: var(--canvas-backdrop);
+}
+
+.conversation-head-avatar {
+  flex: 0 0 auto;
+}
+
+.workspace-title {
+  font-family: var(--font-family-display);
+}
+
+.conversation-head-kind {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0 var(--space-8);
+  border: 1px solid var(--border-accent);
+  border-radius: 999px;
+  background: var(--surface-accent);
+  color: var(--text-accent);
+  font-weight: 700;
+}
+
+.message-stream {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface-accent) 38%, transparent), transparent 42%);
+}
+
+.stream-row {
+  width: min(56rem, 100%);
+  margin-inline: auto;
+}
+
+.composer {
+  background: var(--surface-glass);
+  box-shadow: 0 -.5rem 1.5rem color-mix(in srgb, var(--text-primary) 5%, transparent);
+  backdrop-filter: blur(.8rem);
+}
+
+.composer-tool-button {
+  min-height: 2.25rem;
+  border-color: var(--border-default);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-sm);
+}
+
+.composer-main-row :deep(.ui-input) {
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-sm);
+}
+
 @media (max-width: 720px) {
   .forward-dialog {
     grid-template-columns: 1fr;
@@ -1242,6 +1309,14 @@ async function sendMentionPrivateMessage() {
     min-height: 16rem;
     border-right: 0;
     border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+  }
+
+  .conversation-head-avatar {
+    display: none;
+  }
+
+  .stream-row {
+    width: 100%;
   }
 }
 </style>
