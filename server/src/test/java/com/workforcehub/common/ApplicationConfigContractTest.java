@@ -36,6 +36,16 @@ class ApplicationConfigContractTest {
     }
 
     @Test
+    @DisplayName("独立部署变量应显式映射到后端运行属性")
+    void standaloneDeploymentVariablesShouldMapToRuntimeProperties() throws Exception {
+        String config = Files.readString(Path.of("src/main/resources/application.yml"));
+
+        assertTrue(config.contains("port: ${SERVER_PORT:8080}"));
+        assertTrue(config.contains(
+            "local-root: ${WORKFORCE_FILE_LOCAL_ROOT:${user.home}/.workforce-hub/files}"));
+    }
+
+    @Test
     @DisplayName("后端不应保留跨模块 spi 包")
     void backendShouldNotKeepSpiPackage() {
         assertFalse(Files.exists(Path.of("src/main/java/com/workforcehub/spi")),

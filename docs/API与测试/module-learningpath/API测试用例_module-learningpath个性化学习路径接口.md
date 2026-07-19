@@ -16,7 +16,7 @@
 | `LEARNING-PATH-012` | 学生端查看路径 | 显示“今日学习”“学习路径”“推荐资源”三个入口 |
 | `LEARNING-PATH-013` | 学生端查看节点 | 显示目标、资源、时长、完成条件、状态、掌握度和推荐原因 |
 | `LEARNING-PATH-014` | 从路径或推荐打开课程文章 | 返回对应课程和章节，文章正常渲染 |
-| `LEARNING-PATH-015` | 1280px 桌面端和 390px 移动端实测 | 无横向溢出、遮挡和控制台异常，节点完成按钮可操作 |
+| `LEARNING-PATH-015` | 1280px 桌面 Web 实测 | 无横向溢出、遮挡和控制台异常，节点完成按钮可操作 |
 | `LEARNING-PATH-016` | 同一学生并发完成同一当前节点 | 两个请求均幂等返回，只完成当前节点且只解锁一个后续节点 |
 
 后端自动化覆盖位于 `ModuleLearningPathApiIntegrationTest` 和 `ModuleAssessmentApiIntegrationTest`；学生端接口与路由覆盖位于 `employee.test.ts` 和 `router/index.test.ts`。完整交互通过真实浏览器验证。

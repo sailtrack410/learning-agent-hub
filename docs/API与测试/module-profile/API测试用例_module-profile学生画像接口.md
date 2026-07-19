@@ -11,7 +11,7 @@
 | `PROFILE-007` | 完成后继续提交普通回答 | 返回 `409`，提示使用纠正功能 |
 | `PROFILE-008` | 纠正资源偏好结论 | 当前结论更新，版本号递增，新增纠正证据 |
 | `PROFILE-009` | 纠正不存在或尚未形成的维度 | 返回 `400` 或 `409` |
-| `PROFILE-010` | 移动端完成对话和查看维度 | 无横向溢出，输入与纠正操作可用 |
+| `PROFILE-010` | 桌面 Web 完成对话和查看维度 | 无横向溢出，输入与纠正操作可用 |
 | `PROFILE-011` | 学生完成课程测验 | 画像版本递增，掌握程度和易错点更新为评估结论，保留评估证据 |
 
 自动化覆盖位于 `ModuleStudentProfileApiIntegrationTest`、`employee.test.ts`、`shell.test.ts` 和 `router/index.test.ts`。

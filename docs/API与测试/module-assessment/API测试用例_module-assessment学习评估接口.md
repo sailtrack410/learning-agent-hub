@@ -15,7 +15,7 @@
 | `ASSESSMENT-011` | 测验提交成功 | 记录总用时、单题用时和尝试次数，更新知识点掌握度 |
 | `ASSESSMENT-012` | 测验触发画像联动 | 画像版本递增，新增掌握程度、易错点和两条评估证据 |
 | `ASSESSMENT-013` | 学生端完成测验 | 显示得分、阶段报告、知识点掌握度和逐题解析 |
-| `ASSESSMENT-014` | 1440px 桌面端和 390px 移动端实测 | 无横向溢出，答题、提交和解析可操作，控制台无异常 |
+| `ASSESSMENT-014` | 1440px 桌面 Web 实测 | 无横向溢出，答题、提交和解析可操作，控制台无异常 |
 | `ASSESSMENT-015` | 测验提交后再次查询学习路径 | 路径版本递增，保存来源作答和最新画像版本，节点状态与推荐原因按掌握度调整 |
 
 自动化覆盖位于 `ModuleAssessmentApiIntegrationTest`、`ModuleLearningPathApiIntegrationTest`、`ModuleStudentProfileApiIntegrationTest` 和 `employee.test.ts`。

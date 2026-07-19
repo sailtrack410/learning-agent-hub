@@ -34,6 +34,9 @@ dag-toolbar-bottom.png
 # Audit output
 output/ui-audit-*
 
+# Generated competition submission directory
+deliverables/competition-submission/
+
 # Local declaration materials
 docs/申报材料/
 

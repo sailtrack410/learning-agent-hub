@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /
 
@@ -113,6 +113,7 @@ workforce:
       display-name: ${EDUCATION_ADMIN_DISPLAY_NAME:教育运营管理员}
   file:
     storage-provider: ${FILE_STORAGE_PROVIDER:LOCAL}
+    local-root: ${WORKFORCE_FILE_LOCAL_ROOT:${user.home}/.workforce-hub/files}
     preview:
       libreoffice-command: ${LIBREOFFICE_BIN:soffice}
       timeout-seconds: ${FILE_PREVIEW_TIMEOUT_SECONDS:120}
