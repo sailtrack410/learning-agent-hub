@@ -86,6 +86,13 @@ if [[ -d "$root_dir/docs/提交" ]]; then
     \) -exec cp {} "$stage_dir/docs/" \;
 fi
 
+copy_source_file "$root_dir/docs/docs/软件杯全功能系统测试报告-20260719.md" \
+  "$stage_dir/docs/技术附件-系统测试报告.md"
+copy_source_file "$root_dir/docs/开源软件与许可证清单.md" \
+  "$stage_dir/docs/技术附件-开源软件与许可证清单.md"
+copy_source_file "$root_dir/docs/部署与交付/AI-Coding工具使用说明.md" \
+  "$stage_dir/docs/技术附件-AI-Coding工具使用说明.md"
+
 if ! find "$stage_dir/docs" -maxdepth 1 -type f -print -quit | grep -q .; then
   echo "未找到比赛 Word、PPT 或 PDF 文档" >&2
   exit 1
