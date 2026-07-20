@@ -12,9 +12,17 @@ for command_name in mvn npm rsync rg; do
   }
 done
 
-rm -rf "$stage_dir"
+existing_document_dir="$stage_dir-existing-documents"
+rm -rf "$stage_dir" "$existing_document_dir"
 mkdir -p "$stage_dir"
-trap 'rm -rf "$stage_dir"' EXIT
+mkdir -p "$existing_document_dir"
+trap 'rm -rf "$stage_dir" "$existing_document_dir"' EXIT
+
+if [[ -d "$output_dir/docs" ]]; then
+  find "$output_dir/docs" -type f \( \
+    -iname '*.doc' -o -iname '*.docx' -o -iname '*.ppt' -o -iname '*.pptx' -o -iname '*.pdf' \
+    \) -exec cp {} "$existing_document_dir/" \;
+fi
 
 echo "[1/5] 构建后端可执行包"
 (cd "$root_dir/server" && mvn -DskipTests package)
@@ -37,12 +45,6 @@ copy_source_file() {
   local target_path="$2"
   mkdir -p "$(dirname "$target_path")"
   cp "$source_path" "$target_path"
-}
-
-copy_document() {
-  local source_relative="$1"
-  local target_relative="$2"
-  copy_source_file "$root_dir/docs/$source_relative" "$stage_dir/docs/$target_relative"
 }
 
 echo "[4/5] 按白名单同步三端、配置样板和正式文档"
@@ -76,24 +78,18 @@ rsync -a --exclude 'stats.html' "$root_dir/employee-web/dist/" "$stage_dir/emplo
 copy_source_file "$root_dir/deploy/standalone.env.example" "$stage_dir/.env.example"
 copy_source_file "$root_dir/deploy/competition-submission.README.md" "$stage_dir/README.md"
 
-copy_document "docs/软件杯教育版提交文档清单.md" "00-软件杯教育版提交文档清单.md"
-copy_document "产品与业务/软件杯教育版需求规格说明书.md" "01-软件杯教育版需求规格说明书.md"
-copy_document "架构与设计/软件杯教育版系统设计说明书.md" "02-软件杯教育版系统设计说明书.md"
-copy_document "docs/软件杯教育版数据库设计说明书.md" "03-软件杯教育版数据库设计说明书.md"
-copy_document "docs/软件杯教育版权限与安全设计说明书.md" "04-软件杯教育版权限与安全设计说明书.md"
-copy_document "API与测试/软件杯教育版测试说明书.md" "05-软件杯教育版测试说明书.md"
-copy_document "docs/软件杯全功能系统测试报告-20260719.md" "06-软件杯教育版系统测试报告.md"
-copy_document "部署与交付/部署与初始化.md" "07-部署与初始化.md"
-copy_document "docs/软件杯教育版用户操作手册.md" "08-软件杯教育版用户操作手册.md"
-copy_document "开源软件与许可证清单.md" "09-开源软件与许可证清单.md"
-copy_document "部署与交付/AI-Coding工具使用说明.md" "10-AI-Coding工具使用说明.md"
-copy_document "docs/API文档_教育版认证与会话.md" "API与测试/API文档_教育版认证与会话.md"
-copy_document "docs/API文档_AI基座与知识库管理.md" "API与测试/API文档_AI基座与知识库管理.md"
+mkdir -p "$stage_dir/docs"
+find "$existing_document_dir" -maxdepth 1 -type f -exec cp {} "$stage_dir/docs/" \;
+if [[ -d "$root_dir/docs/提交" ]]; then
+  find "$root_dir/docs/提交" -maxdepth 1 -type f \( \
+    -iname '*.doc' -o -iname '*.docx' -o -iname '*.ppt' -o -iname '*.pptx' -o -iname '*.pdf' \
+    \) -exec cp {} "$stage_dir/docs/" \;
+fi
 
-for module_name in module-course module-profile module-assessment module-learningpath module-learningresource; do
-  mkdir -p "$stage_dir/docs/API与测试/$module_name"
-  rsync -a "$root_dir/docs/API与测试/$module_name/" "$stage_dir/docs/API与测试/$module_name/"
-done
+if ! find "$stage_dir/docs" -maxdepth 1 -type f -print -quit | grep -q .; then
+  echo "未找到比赛 Word、PPT 或 PDF 文档" >&2
+  exit 1
+fi
 
 if find "$stage_dir" -type f \( \
   -name '.env' -o -name '.DS_Store' -o -name '*.log' -o -name '*.pid' \
