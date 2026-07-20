@@ -74,6 +74,7 @@ mkdir -p "$stage_dir/employee-web/dist"
 rsync -a --exclude 'stats.html' "$root_dir/employee-web/dist/" "$stage_dir/employee-web/dist/"
 
 copy_source_file "$root_dir/deploy/standalone.env.example" "$stage_dir/.env.example"
+copy_source_file "$root_dir/deploy/competition-submission.README.md" "$stage_dir/README.md"
 
 copy_document "docs/软件杯教育版提交文档清单.md" "00-软件杯教育版提交文档清单.md"
 copy_document "产品与业务/软件杯教育版需求规格说明书.md" "01-软件杯教育版需求规格说明书.md"
@@ -116,8 +117,8 @@ fi
 mkdir -p "$output_dir"
 rsync -a --delete "$stage_dir/" "$output_dir/"
 
-top_level="$(find "$output_dir" -mindepth 1 -maxdepth 1 -print | sed "s#^$output_dir/##" | sort | tr '\n' ' ')"
-if [[ "$top_level" != ".env.example admin-web docs employee-web server " ]]; then
+top_level="$(find "$output_dir" -mindepth 1 -maxdepth 1 -print | sed "s#^$output_dir/##" | LC_ALL=C sort | tr '\n' ' ')"
+if [[ "$top_level" != ".env.example README.md admin-web docs employee-web server " ]]; then
   echo "比赛目录顶层结构不符合白名单: $top_level" >&2
   exit 1
 fi
